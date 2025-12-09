@@ -2,7 +2,7 @@
 
 [English](README_EN.md) | [中文](README.md)
 
-> ⚠️ **声明**：本项目完全由 AI 生成，核心逻辑与代码构建由 **Gemini 3.0 Pro** 与 **GPT-5.1 Thinking** 协作完成。
+> ⚠️ **声明**：本项目部分环节使用 **Gemini 3.0 Pro** 与 **GPT-5.1 Thinking** 协作完成。
 
 这是一个专为 maimai DX 比赛设计的开源签到与赛事管理系统，包含 Web 管理端与 Android 客户端。旨在提供高效、现代化的赛事组织体验。
 

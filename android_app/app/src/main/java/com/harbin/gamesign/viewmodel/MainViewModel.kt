@@ -69,6 +69,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _matchNumberChanged = MutableSharedFlow<Int>()
     val matchNumberChanged: SharedFlow<Int> = _matchNumberChanged.asSharedFlow()
     
+    // Ban 动画触发
+    private val _showBanAnimation = MutableSharedFlow<String>() // "A" or "B"
+    val showBanAnimation: SharedFlow<String> = _showBanAnimation.asSharedFlow()
+
     init {
         viewModelScope.launch {
             savedPlayerId.collect { id ->
@@ -81,11 +85,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     // 签到
-    fun checkin(name: String) {
+    fun checkin(name: String, lat: Double? = null, lon: Double? = null) {
         viewModelScope.launch {
             _currentPlayer.value = UiState.Loading
             try {
-                val response = api.checkin(CheckinRequest(name))
+                val response = api.checkin(CheckinRequest(name, lat, lon))
                 if (response.success && response.data != null) {
                     _currentPlayer.value = UiState.Success(response.data)
                     prefs.savePlayer(response.data.id, response.data.name)
@@ -146,13 +150,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun authLogin(name: String, pass: String) {
+    fun authLogin(name: String, pass: String, lat: Double? = null, lon: Double? = null) {
         viewModelScope.launch {
             _currentPlayer.value = UiState.Loading
             try {
-                val res = api.login(LoginRequest(name, pass))
+                val res = api.login(LoginRequest(name, pass, lat, lon))
                 if (res.success) {
-                     checkin(name) 
+                     checkin(name, lat, lon) 
                 } else {
                     _currentPlayer.value = UiState.Error(res.message ?: "登录失败")
                     _message.emit(res.message ?: "登录失败")
@@ -163,12 +167,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun authRegister(name: String, pass: String, avatarUri: Uri?, context: Context) {
+    fun authRegister(name: String, pass: String, avatarUri: Uri?, context: Context, lat: Double? = null, lon: Double? = null) {
         viewModelScope.launch {
             _currentPlayer.value = UiState.Loading
             try {
                 val namePart = name.toRequestBody("text/plain".toMediaTypeOrNull())
                 val passPart = pass.toRequestBody("text/plain".toMediaTypeOrNull())
+                val latPart = lat?.toString()?.toRequestBody("text/plain".toMediaTypeOrNull())
+                val lonPart = lon?.toString()?.toRequestBody("text/plain".toMediaTypeOrNull())
                 
                 var avatarPart: MultipartBody.Part? = null
                 if (avatarUri != null) {
@@ -186,10 +192,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
 
-                val res = api.register(namePart, passPart, avatarPart)
+                val res = api.register(namePart, passPart, latPart, lonPart, avatarPart)
                 if (res.success) {
                     _message.emit("注册成功")
-                    checkin(name)
+                    checkin(name, lat, lon)
                 } else {
                     _currentPlayer.value = UiState.Error(res.message ?: "注册失败")
                     _message.emit(res.message ?: "注册失败")
@@ -431,6 +437,78 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    
+    // Ban 卡片兑换 (NFC)
+    
+    // NFC 交互状态
+    sealed class NfcState {
+        object Idle : NfcState()
+        object Reading : NfcState() // 光效 + 加载中
+        data class Found(val type: String, val code: String) : NfcState() // 发现卡片，等待确认
+        data class Success(val type: String) : NfcState() // 兑换成功
+        data class Error(val message: String) : NfcState() // 失败
+    }
+
+    private val _nfcState = MutableStateFlow<NfcState>(NfcState.Idle)
+    val nfcState: StateFlow<NfcState> = _nfcState.asStateFlow()
+
+    fun resetNfcState() {
+        _nfcState.value = NfcState.Idle
+    }
+
+    // 1. 读取到 NFC (UI调用)
+    fun onNfcRead(cardCode: String) {
+        if (_nfcState.value is NfcState.Reading || _nfcState.value is NfcState.Found) return
+        
+        viewModelScope.launch {
+            _nfcState.value = NfcState.Reading
+            // 配合动画时长：边框蔓延(0.4s) + 传送门出现/卡片浮出(0.4s) = 0.8s
+            delay(800) 
+            
+            // 简单的客户端解析：假设卡密格式为 "A-XXXX" 或 "B-XXXX"
+            if (cardCode.startsWith("A-", ignoreCase = true)) {
+                _nfcState.value = NfcState.Found("A", cardCode)
+            } else if (cardCode.startsWith("B-", ignoreCase = true)) {
+                _nfcState.value = NfcState.Found("B", cardCode)
+            } else {
+                // 如果格式不对，可能需要去后台验证，或者直接报错
+                // 这里为了演示效果，假设它可能是旧卡或者未知卡
+                _nfcState.value = NfcState.Error("未知的卡片类型")
+            }
+        }
+    }
+
+    // 2. 确认兑换
+    fun confirmRedeem() {
+        val currentState = _nfcState.value
+        if (currentState !is NfcState.Found) return
+        
+        val code = currentState.code
+        val type = currentState.type
+        val playerId = savedPlayerId.value ?: return
+
+        viewModelScope.launch {
+            try {
+                val response = api.redeemBanCard(BanRedeemRequest(playerId, code))
+                if (response.success && response.data != null) {
+                    _nfcState.value = NfcState.Success(response.data.type)
+                    refreshPlayer(playerId)
+                    // 成功后延迟一会关闭
+                    delay(2000)
+                    _nfcState.value = NfcState.Idle
+                } else {
+                    _nfcState.value = NfcState.Error(response.message ?: "无效的卡片或已使用")
+                }
+            } catch (e: Exception) {
+                _nfcState.value = NfcState.Error("网络错误：${e.message}")
+            }
+        }
+    }
+    
+    // 旧的方法保留但弃用，或者删除
+    fun redeemBanCard(cardCode: String) {
+        onNfcRead(cardCode)
+    }
     
     // 退出登录
     fun logout() {
