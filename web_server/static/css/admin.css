@@ -1,0 +1,364 @@
+/* 
+ * admin.css - 后台管理界面特有样式
+ * 核心变量 (:root) 已在 core.css 中定义 (Material You Olive Theme)
+ */
+
+/* Admin 特有的 body 微调（如果有） */
+body {
+    padding: 24px;
+    /* 背景色已由 core.css 统一管理 */
+}
+
+
+/* ===== 核心容器：Card ===== */
+/* Screenshot Style: 大圆角、扁平(Tonal)、无边框线、依靠色块区分 */
+.card {
+    border-radius: var(--radius-xl);
+    border: none;
+    background-color: var(--m3-surface-container);
+    /* 极淡的阴影，几乎扁平 */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    margin-bottom: 24px;
+    overflow: hidden;
+    /* 保证子元素不溢出圆角 */
+    animation: float-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.card-header {
+    background: transparent;
+    border-bottom: none;
+    padding: 24px 24px 8px 24px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--m3-on-surface);
+    letter-spacing: -0.01em;
+}
+
+.card-body {
+    padding: 24px;
+}
+
+/* ===== App Bar ===== */
+/* 改为透明/扁平风格，强调文字 */
+.m3-app-bar {
+    border-radius: var(--radius-xl);
+    background: var(--m3-surface-container-high);
+    padding: 24px 32px;
+    margin-bottom: 32px;
+    color: var(--m3-on-surface);
+    box-shadow: none;
+}
+
+.m3-app-bar-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--m3-primary);
+    /* 使用主色强调品牌 */
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.m3-app-bar-event {
+    font-size: 1.75rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin-top: 4px;
+}
+
+/* 当前赛事胶囊 */
+#current-event-name {
+    background: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+    border: none;
+    padding: 8px 20px;
+    border-radius: var(--radius-full);
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.m3-chip {
+    background: transparent;
+    border: 1px solid var(--m3-outline);
+    color: var(--m3-on-surface-variant);
+    padding: 7px 16px;
+    border-radius: var(--radius-full);
+}
+
+/* ===== Metric Cards (彩色统计卡片) ===== */
+.metric-card {
+    border-radius: var(--radius-lg);
+    border: none;
+    padding: 20px 24px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s;
+}
+
+.metric-card:hover {
+    transform: translateY(-4px);
+}
+
+/* ===== M3 Button Styles ===== */
+.btn-m3-primary {
+    background-color: var(--m3-primary);
+    color: var(--m3-on-primary);
+    border: none;
+}
+.btn-m3-primary:hover {
+    background-color: var(--m3-primary-container);
+    color: var(--m3-on-primary-container);
+}
+
+.btn-m3-outline-primary {
+    color: var(--m3-primary);
+    border: 1px solid var(--m3-primary);
+    background: transparent;
+}
+.btn-m3-outline-primary:hover {
+    background-color: var(--m3-primary-container);
+    color: var(--m3-on-primary-container);
+}
+
+.btn-m3-outline-secondary {
+    color: var(--m3-on-surface-variant);
+    border: 1px solid var(--m3-outline);
+    background: transparent;
+}
+.btn-m3-outline-secondary:hover {
+    background-color: var(--m3-surface-container-high);
+    color: var(--m3-on-surface);
+}
+
+.metric-card h6 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 0.7;
+    margin-bottom: 8px;
+    text-transform: none;
+    /* 移除全大写 */
+}
+
+.metric-card h3 {
+    font-size: 2.2rem;
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.1;
+}
+
+.metric-chip,
+.metric-chip-oncolor {
+    /* 隐藏统计卡片里的小chip，追求极简 */
+    display: none;
+}
+
+/* 针对特定位置的卡片上色 */
+/* 总名单 - 默认 container-high */
+.col-md-2:nth-child(1) .metric-card {
+    background: var(--m3-surface-container-high);
+}
+
+/* 已签到 - 浅绿 */
+.col-md-2:nth-child(2) .metric-card {
+    background: var(--tonal-green);
+    color: #1a3c18;
+}
+
+/* 已分配 - 浅黄 */
+.col-md-2:nth-child(3) .metric-card {
+    background: var(--tonal-yellow);
+    color: #423e2a;
+}
+
+/* 16强 - 浅紫/蓝 */
+.col-md-2:nth-child(4) .metric-card {
+    background: var(--tonal-blue);
+    color: #2d2638;
+}
+
+/* 4强 - 浅橙 */
+.col-md-2:nth-child(5) .metric-card {
+    background: var(--tonal-orange);
+    color: #4a2f26;
+}
+
+/* 复活赛 - 默认 */
+.col-md-2:nth-child(6) .metric-card {
+    background: var(--m3-surface-container-high);
+}
+
+/* ===== Buttons (全圆角 + 弹性动画) ===== */
+.btn {
+    border-radius: var(--radius-full);
+    padding: 10px 24px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    border: none;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.btn:hover {
+    transform: scale(1.03);
+    /* 弹性缩放 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+/* Primary: 橄榄绿实心 */
+.btn-primary {
+    background: var(--m3-primary);
+    color: var(--m3-on-primary);
+    box-shadow: none;
+}
+
+.btn-primary:hover {
+    background: #647500;
+    /* 稍亮一点 */
+    color: white;
+}
+
+/* Secondary/Group Toggle: Tonal 风格 */
+.btn-secondary,
+.group-toggle-btn {
+    background: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+}
+
+.btn-secondary:hover {
+    background: #d5d8c8;
+    color: black;
+}
+
+/* Success: 这里的绿色改为配合主色的 Tonality */
+.btn-success {
+    background: var(--m3-primary-container);
+    color: var(--m3-on-primary-container);
+}
+
+/* Error: 之前的 M3 Error Button 逻辑保留但配色微调 */
+.m3-btn-error,
+.btn-danger {
+    background: var(--m3-error);
+    color: white;
+    border-radius: var(--radius-full);
+}
+
+.m3-btn-error:hover,
+.btn-danger:hover {
+    background: #93000a;
+    /* darker red */
+    color: white;
+}
+
+/* 单人删除的小按钮 */
+.btn-outline-danger {
+    border: 1px solid var(--m3-error);
+    color: var(--m3-error);
+    background: transparent;
+    padding: 4px 10px;
+    /* 小一点 */
+}
+
+.btn-outline-danger:hover {
+    background: var(--m3-error-container);
+    color: var(--m3-error);
+    border-color: var(--m3-error);
+}
+
+/* ===== Tables ===== */
+.table {
+    --bs-table-bg: transparent;
+    color: var(--m3-on-surface);
+}
+
+.table thead th {
+    font-weight: 600;
+    color: var(--m3-secondary);
+    border-bottom: 1px solid var(--m3-outline);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+}
+
+.table tbody tr {
+    transition: background 0.1s;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(85, 101, 0, 0.05);
+    /* 淡淡的主色 */
+}
+
+/* 状态 Badge: 改为 softer colors */
+.badge {
+    border-radius: 6px;
+    font-weight: 500;
+    padding: 6px 10px;
+}
+
+.badge.bg-success {
+    background-color: var(--m3-primary-container) !important;
+    color: var(--m3-on-primary-container) !important;
+}
+
+.badge.bg-secondary,
+.badge.bg-dark {
+    background-color: var(--m3-surface-container-high) !important;
+    color: var(--m3-on-surface-variant) !important;
+}
+
+/* ===== Alerts ===== */
+.alert {
+    border-radius: var(--radius-lg);
+    border: none;
+    background: var(--m3-tertiary-container);
+    color: #00201e;
+}
+
+.alert-secondary {
+    background: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+}
+
+/* ===== Form Elements ===== */
+.form-control,
+.form-select {
+    border-radius: 12px;
+    background-color: var(--m3-surface);
+    border: 1px solid var(--m3-outline);
+    padding: 10px 14px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--m3-primary);
+    box-shadow: 0 0 0 3px rgba(85, 101, 0, 0.15);
+}
+
+/* ===== Animation ===== */
+@keyframes float-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Tagger for Group Selection (Special) */
+#current-group-display.text-success {
+    color: var(--m3-primary) !important;
+}
+
+#current-group-display.text-primary {
+    color: #2b5c77 !important;
+    /* Blue-ish for Advanced */
+}

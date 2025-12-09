@@ -1,0 +1,269 @@
+/* 这一份就是 index 页面自己的样式 */
+/* 注意：核心颜色变量现已由 core.css 全局提供 (Material You Olive Theme) */
+
+:root {
+    /* 首页不再定义自己的背景变量，直接由 core.css 的 m3-surface 控制 */
+}
+
+body {
+    /* 继承 core.css 的全局设置，这里只需微调布局 */
+    position: relative;
+    overflow-x: hidden;
+    padding-bottom: 24px;
+}
+
+/* 覆盖默认背景，确保首页清爽 */
+body[data-theme="light"],
+body[data-theme="dark"] {
+    background: var(--m3-surface);
+}
+
+/* 顶部 App Bar：Material 3 Expressive 胶囊条 (Tonal Style) */
+.m3-app-bar {
+    max-width: 1160px;
+    margin: 26px auto 18px;
+    padding: 16px 24px;
+    border-radius: var(--radius-xl);
+
+    /* Tonal Background: 使用 surface-container-high，移除强渐变 */
+    background: var(--m3-surface-container-high);
+    border: none;
+
+    /* 极轻微的阴影 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* 移除原来的高光条 ::before，保持扁平 */
+.m3-app-bar::before {
+    display: none;
+}
+
+/* 主标题 */
+.m3-app-bar-event {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--m3-on-surface);
+}
+
+/* 副标题 */
+.m3-app-bar-title-sub {
+    font-size: 0.85rem;
+    color: var(--m3-secondary);
+    margin-top: 4px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+/* 当前赛事胶囊 */
+.chip-current-event {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+
+    /* 使用 Secondary Container */
+    background: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+    border: none;
+
+    font-size: 0.8rem;
+    box-shadow: none;
+    /* 扁平 */
+    font-weight: 500;
+}
+
+/* 顶栏里的按钮 */
+.m3-app-bar .btn {
+    border-radius: var(--radius-full);
+    padding-inline: 20px;
+    font-size: 0.85rem;
+    border: none;
+
+    /* 使用 Primary Container 还是 Surface? 这里用 transparent + outline 风格或者 tonal */
+    background: var(--m3-surface);
+    color: var(--m3-on-surface);
+    box-shadow: none;
+}
+
+.m3-app-bar .btn:hover {
+    background: var(--m3-surface-container-high);
+    transform: scale(1.02);
+}
+
+/* 主体布局 */
+.main-shell {
+    padding: 20px 16px 32px;
+}
+
+.main-layout {
+    max-width: 1080px;
+    margin: 0 auto;
+}
+
+/* 卡片基样式 (Tonal Surface) */
+.card-surface,
+.status-card {
+    border-radius: var(--radius-xl);
+    border: none;
+    background: var(--m3-surface-container);
+    box-shadow: none;
+    /* 极简 Tonal */
+    padding: 24px;
+    margin-bottom: 24px;
+    transition: background 0.3s ease, transform 0.2s ease;
+
+    /* 入场动画 */
+    animation: float-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+/* 首页的大卡片可以使用 container-low 或 high 区分 */
+.card-surface {
+    background: var(--m3-surface-container-low);
+}
+
+.status-card {
+    background: var(--m3-surface-container);
+    /* 稍微深一点/高一点 */
+    padding: 24px 28px;
+}
+
+.card-surface:hover,
+.status-card:hover {
+    /* 极其微弱的上浮暗示 */
+    transform: translateY(-2px);
+}
+
+.card-surface-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.card-surface-title,
+.status-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--m3-on-surface);
+    letter-spacing: -0.01em;
+}
+
+.card-surface-subtitle,
+.status-sub {
+    font-size: 0.9rem;
+    color: var(--m3-on-surface-variant);
+}
+
+/* 表单样式 */
+.form-control-lg {
+    border-radius: var(--radius-full);
+    border: 1px solid var(--m3-outline);
+    background-color: var(--m3-surface);
+    padding: 12px 20px;
+    color: var(--m3-on-surface);
+    transition: all 0.2s ease;
+}
+
+.form-control-lg:focus {
+    border-color: var(--m3-primary);
+    box-shadow: 0 0 0 3px rgba(85, 101, 0, 0.15);
+    /* Olive Glow */
+    background-color: var(--m3-surface-container-high);
+}
+
+/* 主按钮 */
+.btn-primary {
+    border-radius: var(--radius-full);
+    background: var(--m3-primary);
+    color: var(--m3-on-primary);
+    box-shadow: 0 4px 12px rgba(85, 101, 0, 0.2);
+    font-weight: 600;
+    padding: 12px 32px;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+    background: #6e7e00;
+    /* slightly lighter olive */
+    transform: scale(1.02);
+    box-shadow: 0 6px 16px rgba(85, 101, 0, 0.3);
+}
+
+/* 选手信息块 */
+.player-badge {
+    border-radius: var(--radius-lg);
+    padding: 12px 16px;
+    background: var(--m3-secondary-container);
+    border: none;
+    color: var(--m3-on-secondary-container);
+    text-align: left;
+    font-size: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.player-rating {
+    font-size: 0.8rem;
+    color: var(--m3-on-secondary-container);
+    opacity: 0.7;
+    margin-top: 4px;
+}
+
+/* 状态徽章 (Tonal) */
+.status-card .alert {
+    border-radius: var(--radius-lg);
+    border: none;
+    background-color: var(--m3-tertiary-container);
+    color: #00201e;
+    /* On Tertiary Container */
+    font-weight: 500;
+}
+
+.status-card .alert-info {
+    /* 复活赛等提示 */
+    background-color: var(--tonal-blue);
+    color: #1d192b;
+}
+
+/* 抽选界面卡片适配 */
+#song-draw-player-panel .card {
+    border-radius: var(--radius-lg);
+    border: none;
+    background: var(--m3-surface-container-high);
+    box-shadow: none;
+}
+
+/* 晋级/结果 样式 Tonal 化 */
+.promoted {
+    background-color: var(--m3-primary-container);
+    color: var(--m3-on-primary-container);
+    border: none;
+}
+
+.group-green {
+    color: #386a20;
+}
+
+.group-red {
+    color: #ba1a1a;
+}
+
+.number-blue {
+    color: #00639b;
+}
+
+/* Dark Mode 适配已经在 core.css 中通过 var 自动完成，这里只需要微调特例 */
+/* ...由于使用了 var(--m3-...), 这里几乎不需要额外的 dark mode 块，除非有硬编码颜色 */
+
+/* 庆祝动画保持原样，或者改一下颜色使其符合 Olive 主题 */
+.rocket {
+    /* 可以改成橙色/黄色，保持活力 */
+}

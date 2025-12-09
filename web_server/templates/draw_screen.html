@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <title>曲目抽选大屏</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入全局样式 (Olive Theme) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/core.css') }}">
+
+    <style>
+        /* 移除本地 :root，使用 core.css 的全局定义 */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                "Segoe UI", "Roboto", "Noto Sans SC", sans-serif;
+            color: var(--m3-on-surface);
+            background: var(--m3-surface);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        .m3-shell {
+            max-width: 1320px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* 顶部 App Bar（使用全局变量） */
+        .m3-top-bar {
+            border-radius: 28px;
+            padding: 12px 20px;
+            background: var(--m3-surface-container);
+            box-shadow:
+                0 18px 42px rgba(15, 23, 42, 0.08),
+                0 0 0 1px var(--m3-outline);
+            color: var(--m3-on-surface);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .m3-top-title {
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            opacity: 0.9;
+            color: var(--m3-primary);
+        }
+
+        .m3-top-subtitle {
+            font-size: 1.2rem;
+            font-weight: 650;
+            color: var(--m3-on-surface);
+        }
+
+        .m3-chip-oncolor {
+            border-radius: 999px;
+            padding: 4px 10px;
+            background: var(--m3-secondary-container);
+            border: 1px solid var(--m3-outline);
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--m3-on-secondary-container);
+        }
+
+        .top-meta {
+            font-size: 0.85rem;
+            color: var(--m3-on-surface-variant);
+        }
+
+        .btn-top-close {
+            border-radius: 999px;
+            border: 1px solid var(--m3-outline);
+            background: var(--m3-surface-container-high);
+            color: var(--m3-on-surface);
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05);
+        }
+
+        .btn-top-close:hover {
+            background: var(--m3-surface-container);
+        }
+
+        /* 中心卡片区域 */
+        .screen-main-card {
+            border-radius: 28px;
+            padding: 20px 22px 22px;
+            background: var(--m3-surface-container-low);
+            box-shadow:
+                0 24px 50px rgba(15, 23, 42, 0.08),
+                0 0 0 1px var(--m3-outline);
+        }
+
+        .status-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--m3-on-surface);
+        }
+
+        .status-text span {
+            background: linear-gradient(120deg, var(--m3-primary), var(--m3-tertiary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .status-hint {
+            font-size: 0.9rem;
+            color: var(--m3-on-surface-variant) !important;
+        }
+
+        /* 曲目展示区域 */
+        .song-card-wrapper {
+            margin: 0 auto;
+            max-width: 1160px;
+        }
+
+        .song-grid {
+            display: grid;
+            gap: 18px;
+            justify-items: stretch;
+        }
+
+        .song-item {
+            position: relative;
+            padding: 14px 12px 12px;
+            border-radius: 22px;
+            background: var(--m3-surface-container);
+            border: 1px solid var(--m3-outline);
+            box-shadow:
+                0 12px 26px rgba(15, 23, 42, 0.06),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            text-align: center;
+            transition:
+                transform 0.16s ease-out,
+                box-shadow 0.16s ease-out,
+                border-color 0.16s ease-out,
+                background-color 0.16s ease-out;
+            overflow: hidden;
+        }
+
+        .song-item img {
+            width: 100%;
+            max-height: 170px;
+            object-fit: contain;
+            border-radius: 18px;
+            margin-bottom: 0.5rem;
+            background: rgba(0,0,0,0.05);
+        }
+
+        .song-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--m3-on-surface);
+        }
+
+        .song-item::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at top center, var(--m3-surface-container-high), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.18s ease-out;
+        }
+
+        .song-item.highlight {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow:
+                0 0 26px var(--m3-primary-container),
+                0 0 0 1px var(--m3-primary);
+            border-color: var(--m3-primary);
+            background: var(--m3-primary-container);
+            color: var(--m3-on-primary-container);
+        }
+
+        .song-item.highlight::after {
+            opacity: 1;
+        }
+
+        .song-item.selected {
+            transform: translateY(-4px) scale(1.015);
+            box-shadow:
+                0 0 32px var(--m3-tertiary-container),
+                0 0 0 1px var(--m3-tertiary);
+            border-color: var(--m3-tertiary);
+            background: var(--m3-tertiary-container);
+        }
+
+        .song-item.selected .song-name {
+            color: var(--m3-on-tertiary-container);
+        }
+
+        /* 控制按钮区域 */
+        .control-row {
+            margin-top: 18px;
+        }
+
+        .btn-big {
+            padding: 0.85rem 1.8rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 999px;
+            min-width: 210px;
+            border: none;
+            transition: background 0.2s, box-shadow 0.2s, opacity 0.2s;
+        }
+
+        .btn-success {
+            border: none;
+            background: var(--m3-primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            color: var(--m3-on-primary);
+            transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out;
+        }
+
+        .btn-success:hover {
+            background: var(--m3-primary);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+            filter: brightness(1.05);
+        }
+
+        .btn-success:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-danger {
+            border: none;
+            background: var(--m3-error);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            color: var(--m3-on-error);
+            transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out;
+        }
+
+        .btn-danger:hover {
+            background: var(--m3-error);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+            filter: brightness(1.05);
+        }
+
+        .btn-danger:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-success:disabled,
+        .btn-danger:disabled {
+            opacity: 0.5;
+            box-shadow: none;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .m3-top-bar {
+                border-radius: 22px;
+            }
+
+            .btn-big {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="m3-shell d-flex flex-column">
+
+        <!-- 顶部 Material 3 风格 App Bar -->
+        <header class="m3-top-bar">
+            <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2 flex-grow-1">
+                <div>
+                    <div class="m3-top-title">HARBIN RED CHART TOURNAMENT</div>
+                    <div class="m3-top-subtitle">
+                        🎰 曲目抽选大屏
+                    </div>
+                </div>
+                <div class="ms-sm-3 d-flex flex-column flex-sm-row gap-2 align-items-sm-center">
+                    <div class="m3-chip-oncolor">
+                        当前目标
+                    </div>
+                    <div class="top-meta">
+                        <strong id="phase-label"></strong>
+                        <span class="mx-1">·</span>
+                        <strong id="group-label"></strong>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-top-close btn-sm" onclick="window.close()">关闭大屏</button>
+        </header>
+
+        <!-- 中心内容 -->
+        <main class="flex-grow-1 d-flex align-items-stretch justify-content-center">
+            <div class="screen-main-card w-100 d-flex flex-column">
+                <div class="d-flex flex-column align-items-center text-center mb-3">
+                    <div id="status-text" class="status-text mb-1">
+                        当前未在抽选。
+                    </div>
+                    <div id="hint-text" class="status-hint">
+                    </div>
+                </div>
+
+                <div class="song-card-wrapper mb-2">
+                    <div id="song-grid" class="song-grid">
+                        <!-- JS 动态插入曲目卡片 -->
+                    </div>
+                </div>
+
+                <div class="control-row d-flex flex-wrap justify-content-center gap-3 mt-auto pt-3">
+                    <button id="btn-start" class="btn btn-success btn-big">
+                        ▶ 开始抽选
+                    </button>
+                    <button id="btn-stop" class="btn btn-danger btn-big" disabled>
+                        ⏹ 停止并确定
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        /* ==================== 原有逻辑：抽选控制 & 轮询 ==================== */
+        (function () {
+            const phase = "{{ phase }}";      // qualifier / revival / semifinal / final
+            const group = "{{ group }}";      // beginner / advanced
+            const target = phase + "_" + group;
+
+            const phaseLabelEl = document.getElementById('phase-label');
+            const groupLabelEl = document.getElementById('group-label');
+            const statusEl = document.getElementById('status-text');
+            const hintEl = document.getElementById('hint-text');
+            const gridEl = document.getElementById('song-grid');
+            const btnStart = document.getElementById('btn-start');
+            const btnStop = document.getElementById('btn-stop');
+
+            function phaseToLabel(p) {
+                if (p === 'qualifier') return '海选赛';
+                if (p === 'revival') return '复活赛';
+                if (p === 'semifinal') return '半决赛';
+                if (p === 'final') return '决赛';
+                return p || '';
+            }
+            function groupToLabel(g) {
+                if (g === 'beginner') return '萌新组';
+                if (g === 'advanced') return '进阶组';
+                if (g === 'peak') return '巅峰组';
+                return g || '';
+            }
+
+            phaseLabelEl.textContent = phaseToLabel(phase);
+            groupLabelEl.textContent = groupToLabel(group);
+
+            let songs = [];
+            let spinTimer = null;
+            let spinIndex = 0;
+
+            let lastStatus = 'idle';
+            let lastSongIdsStr = '';
+            let lastSnapshotStr = null;
+
+            // 冻结结果：避免轮询重复更新导致“抖动”
+            let resultFrozen = false;
+            let lastResultSignature = null;
+
+            function fetchSongsForTarget() {
+                return fetch(`/api/v1/songs?phase=${phase}&group=${group}`, { cache: 'no-store' })
+                    .then(function (resp) { return resp.json(); })
+                    .then(function (res) {
+                        if (res && res.success && Array.isArray(res.data)) {
+                            const list = res.data.map(function (s) {
+                                return { id: s.id, name: s.name, image_url: s.image_url };
+                            });
+                            buildGrid(list);
+                            lastSongIdsStr = list.map(function (s) { return s.id; }).join(',');
+                        }
+                    })
+                    .catch(function () { /* 静默失败 */ });
+            }
+
+            function buildGrid(songList) {
+                songs = songList || [];
+                gridEl.innerHTML = '';
+
+                // === 固定两行显示：列数 = ceil(总数 / 2) ===
+                const total = songs.length;
+                let cols = Math.ceil(total / 2);
+                if (cols < 1) cols = 1;
+                gridEl.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+
+                songs.forEach(function (s) {
+                    const card = document.createElement('div');
+                    card.className = 'song-item';
+                    card.dataset.id = String(s.id);
+
+                    if (s.image_url) {
+                        const img = document.createElement('img');
+                        img.src = s.image_url;
+                        img.alt = s.name || '';
+                        card.appendChild(img);
+                    }
+
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'song-name';
+                    nameDiv.textContent = s.name || '';
+                    card.appendChild(nameDiv);
+
+                    gridEl.appendChild(card);
+                });
+            }
+
+            function setHighlightIndex(idx) {
+                const items = gridEl.querySelectorAll('.song-item');
+                items.forEach(function (el, i) {
+                    el.classList.toggle('highlight', i === idx);
+                });
+            }
+
+            function clearHighlight() {
+                gridEl.querySelectorAll('.song-item').forEach(function (el) {
+                    el.classList.remove('highlight');
+                });
+            }
+
+            function setSelected(ids) {
+                const idSet = new Set((ids || []).map(function (x) { return String(x); }));
+                gridEl.querySelectorAll('.song-item').forEach(function (el) {
+                    const isSel = idSet.has(el.dataset.id);
+                    el.classList.toggle('selected', isSel);
+                });
+            }
+
+            function startSpin() {
+                if (spinTimer || !songs || songs.length === 0) return;
+                spinIndex = 0;
+                clearHighlight();
+                spinTimer = setInterval(function () {
+                    setHighlightIndex(spinIndex);
+                    spinIndex = (spinIndex + 1) % songs.length;
+                }, 120);
+            }
+
+            function stopSpin() {
+                if (spinTimer) {
+                    clearInterval(spinTimer);
+                    spinTimer = null;
+                }
+                clearHighlight();
+            }
+
+            function updateButtons(status, isTarget) {
+                if (!isTarget || status === 'idle') {
+                    btnStart.disabled = false;
+                    btnStop.disabled = true;
+                    return;
+                }
+                if (status === 'rolling') {
+                    btnStart.disabled = true;
+                    btnStop.disabled = false;
+                } else if (status === 'finished') {
+                    btnStart.disabled = false;
+                    btnStop.disabled = true;
+                }
+            }
+
+            function render(data) {
+                if (!data) return;
+
+                const isThisTarget = (data.phase === phase && data.group === group);
+                updateButtons(data.status, isThisTarget);
+
+                // idle：重置所有状态
+                if (data.status === 'idle' || !data.phase || !data.group) {
+                    stopSpin();
+                    statusEl.textContent = '当前未在抽选。';
+                    hintEl.textContent = '';
+                    gridEl.innerHTML = '';
+                    lastStatus = 'idle';
+                    lastSongIdsStr = '';
+                    resultFrozen = false;
+                    lastResultSignature = null;
+                    return;
+                }
+
+                // 非本大屏负责的组
+                if (!isThisTarget) {
+                    stopSpin();
+                    statusEl.textContent = '其他赛程 / 组别正在抽选曲目。';
+                    hintEl.textContent = '';
+                    gridEl.innerHTML = '';
+                    lastStatus = data.status;
+                    lastSongIdsStr = '';
+                    resultFrozen = false;
+                    lastResultSignature = null;
+                    return;
+                }
+
+                // 曲目列表变化时才重建卡片；若服务端暂未返回列表，使用回退接口拉取
+                const currentSongIdsStr = (data.songs || []).map(function (s) { return s.id; }).join(',');
+                if ((data.songs || []).length === 0) {
+                    fetchSongsForTarget();
+                } else if (currentSongIdsStr !== lastSongIdsStr) {
+                    buildGrid(data.songs || []);
+                    lastSongIdsStr = currentSongIdsStr;
+                }
+
+                if (data.status === 'rolling') {
+                    statusEl.innerHTML = '曲目抽选中…';
+                    hintEl.textContent = '请全体选手共同见证抽选过程。';
+
+                    resultFrozen = false;
+                    lastResultSignature = null;
+                    setSelected([]);
+
+                    if (lastStatus !== 'rolling') {
+                        startSpin();
+                    }
+                }
+                else if (data.status === 'finished') {
+                    stopSpin();
+                    statusEl.innerHTML = '抽选完成，本轮比赛曲目如下：';
+                    hintEl.textContent = '请以下方标记的曲目进行本轮比赛。';
+
+                    const selected = (data.selected_songs && data.selected_songs.length > 0)
+                        ? data.selected_songs
+                        : (data.selected_song ? [data.selected_song] : []);
+
+                    const ids = selected.map(function (s) { return s.id; });
+                    const resultSignature = data.phase + '|' + data.group + '|' + ids.join(',');
+
+                    if (!resultFrozen || resultSignature !== lastResultSignature) {
+                        setSelected(ids);
+                        resultFrozen = true;
+                        lastResultSignature = resultSignature;
+                    }
+                } else {
+                    stopSpin();
+                    resultFrozen = false;
+                    lastResultSignature = null;
+                }
+
+                lastStatus = data.status;
+            }
+
+            function poll() {
+                fetch("{{ url_for('api_song_draw_state') }}", { cache: "no-store" })
+                    .then(function (resp) { return resp.json(); })
+                    .then(function (json) {
+                        // 兼容两种返回格式：
+                        // 1) 旧版：直接返回 { status, songs, selected_songs, ... }
+                        // 2) 新版：统一包装 { success, code, data: { ... } }
+                        const payload = (json && json.data) ? json.data : json;
+                        const snapshot = JSON.stringify(payload);
+                        if (snapshot !== lastSnapshotStr) {
+                            lastSnapshotStr = snapshot;
+                            render(payload);
+                        }
+                    })
+                    .catch(function (err) {
+                        console.warn('song_draw_state_api error:', err);
+                    })
+                    .finally(function () {
+                        setTimeout(poll, 800);
+                    });
+            }
+
+            function callControl(action) {
+                fetch("/api/v1/song_draw/control", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: action, target: target })
+                })
+                    .then(function (resp) {
+                        return resp.json().then(function (j) {
+                            return { ok: resp.ok, data: j };
+                        });
+                    })
+                    .then(function (res) {
+                        if (!res.ok) {
+                            alert(res.data.message || '操作失败');
+                            return;
+                        }
+                        // 乐观更新：在服务端成功响应后即刻更新本地 UI，避免等待下一次轮询
+                        if (action === 'start') {
+                            statusEl.innerHTML = '曲目抽选中…';
+                            hintEl.textContent = '请全体选手共同见证抽选过程。';
+                            btnStart.disabled = true;
+                            btnStop.disabled = false;
+                            resultFrozen = false;
+                            lastResultSignature = null;
+                            startSpin();
+                        } else if (action === 'stop') {
+                            statusEl.innerHTML = '抽选完成，本轮比赛曲目如下：';
+                            hintEl.textContent = '请以下方标记的曲目进行本轮比赛。';
+                            btnStart.disabled = false;
+                            btnStop.disabled = true;
+                            stopSpin();
+                        }
+                    })
+                    .catch(function () {
+                        alert('网络错误，操作未成功。');
+                    });
+            }
+
+            btnStart.addEventListener('click', function () {
+                resultFrozen = false;
+                lastResultSignature = null;
+                callControl('start');
+            });
+
+            btnStop.addEventListener('click', function () {
+                stopSpin();
+                callControl('stop');
+            });
+
+            poll();
+        })();
+    </script>
+
+    <!-- 通用：所有按钮水波纹 + 按钮内部柔光 -->
+    <!-- 移除残留的本地 JS 特效，使用全局 CSS -->
+
+
+</body>
+
+</html>

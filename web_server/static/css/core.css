@@ -1,0 +1,417 @@
+/* ===== 基础字体 & 过渡 ===== */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", "Roboto", "Noto Sans SC", sans-serif;
+    background-color: var(--m3-surface);
+    color: var(--m3-on-surface);
+    transition:
+        color 0.25s ease-out,
+        background-color 0.25s ease-out,
+        background 0.4s ease-out;
+}
+
+/* ===== M3 基础变量（Olive/Warm Theme - 全局） ===== */
+:root {
+    /* --- Core Colors --- */
+    --m3-primary: #556500;
+    --m3-primary-container: #d7e87d;
+    --m3-on-primary: #ffffff;
+    --m3-on-primary-container: #181e00;
+
+    --m3-secondary: #5d5f54;
+    --m3-secondary-container: #e2e4d6;
+    --m3-on-secondary-container: #1a1c15;
+
+    --m3-tertiary: #386663;
+    --m3-tertiary-container: #bcece7;
+
+    /* --- Surface & Backgrounds --- */
+    --m3-surface: #fdfcf5;
+    --m3-surface-container-low: #f7f8f2;
+    --m3-surface-container: #f2f3ed;
+    --m3-surface-container-high: #eceee8;
+
+    --m3-on-surface: #1b1c17;
+    --m3-on-surface-variant: #474842;
+    --m3-outline: #787872;
+
+    /* --- Functional Colors --- */
+    --m3-error: #ba1a1a;
+    --m3-error-container: #ffdad6;
+
+    /* --- Tonal Palette for Metric Cards --- */
+    --tonal-blue: #e8def8;
+    --tonal-green: #ccebc4;
+    --tonal-yellow: #f8eeb0;
+    --tonal-orange: #f5ccb9;
+
+    /* --- Shapes --- */
+    --radius-full: 999px;
+    --radius-xl: 32px;
+    --radius-lg: 24px;
+    --radius-md: 16px;
+
+    /* --- Fonts --- */
+    --font-family: 'Google Sans', 'HarmonyOS Sans', 'Roboto', system-ui, sans-serif;
+}
+
+/* ===== Dark Mode Variables ===== */
+body[data-theme="dark"] {
+    --m3-surface: #1b1c17;
+    --m3-surface-container-low: #1d1e19;
+    --m3-surface-container: #20211c;
+    --m3-surface-container-high: #2b2c26;
+
+    --m3-primary: #bccf6d;
+    --m3-primary-container: #404c00;
+    --m3-on-primary: #273500;
+    --m3-on-primary-container: #d7e87d;
+
+    --m3-secondary: #c6c8ba;
+    --m3-secondary-container: #44453d;
+    --m3-on-secondary-container: #e2e4d6;
+
+    --m3-tertiary: #a0cfcb;
+    --m3-tertiary-container: #1e4e4b;
+
+    --m3-on-surface: #e5e2da;
+    --m3-on-surface-variant: #c8c7bf;
+    --m3-outline: #92918b;
+
+    --tonal-blue: #3e3847;
+    --tonal-green: #293826;
+    --tonal-yellow: #423e2a;
+    --tonal-orange: #4a2f26;
+}
+
+/* ===== 主题切换按钮样式 ===== */
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 20000;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.8);
+    background: rgba(255, 255, 255, 0.9);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    box-shadow:
+        0 6px 18px rgba(15, 23, 42, 0.18),
+        0 0 0 1px rgba(148, 163, 184, 0.45);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition:
+        background-color 200ms ease-out,
+        box-shadow 200ms ease-out,
+        border-color 200ms ease-out,
+        transform 120ms ease-out;
+}
+
+body[data-theme="dark"] .theme-toggle {
+    background: rgba(15, 23, 42, 0.9);
+    border-color: rgba(129, 140, 248, 0.9);
+    box-shadow:
+        0 10px 26px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(30, 64, 175, 0.9);
+}
+
+.theme-toggle:hover {
+    transform: translateY(-1px);
+}
+
+.theme-toggle:active {
+    transform: translateY(0);
+}
+
+.theme-toggle-glow {
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%),
+            rgba(255, 255, 255, 0.55),
+            rgba(255, 255, 255, 0));
+    opacity: 0;
+    mix-blend-mode: screen;
+    filter: blur(10px);
+    transition: opacity 140ms ease-out;
+    z-index: -1;
+}
+
+@media (max-width: 768px),
+(pointer: coarse) {
+    .theme-toggle-glow {
+        display: none;
+    }
+}
+
+.theme-toggle-icon {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+        background-color 260ms ease-out,
+        box-shadow 260ms ease-out;
+    background-color: #facc15;
+    box-shadow:
+        0 0 18px rgba(250, 204, 21, 0.8),
+        0 0 0 2px rgba(250, 250, 250, 0.85);
+}
+
+.theme-toggle-icon::before {
+    content: '☀';
+    font-size: 13px;
+    color: #78350f;
+    transform: translateY(0);
+    transition:
+        opacity 220ms ease-out,
+        transform 220ms ease-out;
+}
+
+body[data-theme="dark"] .theme-toggle-icon {
+    transform: rotate(200deg) scale(1.05);
+    background-color: #a855f7;
+    box-shadow:
+        0 0 18px rgba(168, 85, 247, 0.9),
+        0 0 0 2px rgba(76, 29, 149, 0.95);
+}
+
+body[data-theme="dark"] .theme-toggle-icon::before {
+    content: '☾';
+    color: #f5f3ff;
+    transform: translateY(1px);
+}
+
+/* ===== 圆形扩散主题过渡遮罩 ===== */
+.theme-transition-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0;
+    clip-path: circle(0px at 50% 50%);
+}
+
+.theme-transition-overlay.overlay-to-dark {
+    background:
+        radial-gradient(circle at 10% 0%, rgba(56, 189, 248, 0.35) 0, transparent 55%),
+        radial-gradient(circle at 90% 0%, rgba(147, 51, 234, 0.4) 0, transparent 55%),
+        radial-gradient(circle at 40% 100%, rgba(52, 211, 153, 0.28) 0, transparent 55%),
+        #020617;
+}
+
+.theme-transition-overlay.overlay-to-light {
+    background: #f4f6fb;
+}
+
+/* ===== 光标柔光（桌面端） ===== */
+.cursor-glow {
+    position: fixed;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    pointer-events: none;
+    background:
+        radial-gradient(circle,
+            rgba(56, 189, 248, 0.35) 0,
+            rgba(59, 130, 246, 0.18) 35%,
+            transparent 70%);
+    mix-blend-mode: screen;
+    filter: blur(18px);
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    transition: opacity 180ms ease-out;
+}
+
+@media (max-width: 768px),
+(pointer: coarse) {
+    .cursor-glow {
+        display: none;
+    }
+}
+
+body[data-theme="dark"] .cursor-glow {
+    opacity: 0 !important;
+}
+
+/* ===== 水波纹效果 ===== */
+.btn,
+.theme-toggle,
+.nav-link {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple-effect {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0, transparent 60%);
+    transform: translate(-50%, -50%);
+    animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+    from {
+        opacity: .45;
+        transform: translate(-50%, -50%) scale(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(16);
+    }
+}
+
+/* ===== Global Animations ===== */
+@keyframes float-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== Global Button Interactions ===== */
+.btn {
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s, box-shadow 0.2s;
+}
+
+.btn:hover {
+    transform: scale(1.03);
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+/* ========================================== */
+/* ===== Bootstrap Overrides for Dark Mode ===== */
+/* ========================================== */
+
+/* 强制所有文本颜色跟随主题变量 */
+.text-muted,
+.text-secondary {
+    color: var(--m3-on-surface-variant) !important;
+}
+
+.text-dark {
+    color: var(--m3-on-surface) !important;
+}
+
+/* 强制所有标题颜色跟随主题 */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
+    color: var(--m3-on-surface);
+}
+
+/* 强制所有表单控件适配深色模式 */
+.form-control,
+.form-select {
+    background-color: var(--m3-surface) !important;
+    color: var(--m3-on-surface) !important;
+    border-color: var(--m3-outline) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--m3-surface-container) !important;
+    color: var(--m3-on-surface) !important;
+    border-color: var(--m3-primary) !important;
+    box-shadow: 0 0 0 3px rgba(85, 101, 0, 0.15) !important;
+}
+
+.form-control::placeholder {
+    color: var(--m3-on-surface-variant) !important;
+    opacity: 0.7;
+}
+
+/* Label 样式 */
+.form-label,
+label {
+    color: var(--m3-on-surface);
+}
+
+/* 强制 Alert 适配 */
+.alert {
+    color: var(--m3-on-surface);
+}
+
+.alert-secondary {
+    background-color: var(--m3-secondary-container) !important;
+    color: var(--m3-on-secondary-container) !important;
+    border: none;
+}
+
+/* 强制 Card 适配 */
+.card {
+    background-color: var(--m3-surface-container);
+    color: var(--m3-on-surface);
+    border: none;
+}
+
+.card-header {
+    background-color: transparent;
+    color: var(--m3-on-surface);
+    border-bottom: 1px solid var(--m3-outline);
+}
+
+.card-body {
+    color: var(--m3-on-surface);
+}
+
+/* 强制 Table 适配 */
+.table {
+    color: var(--m3-on-surface);
+    --bs-table-bg: transparent;
+}
+
+.table thead th {
+    color: var(--m3-on-surface-variant);
+    border-bottom-color: var(--m3-outline);
+}
+
+.table tbody td {
+    color: var(--m3-on-surface);
+    border-bottom-color: var(--m3-outline);
+}
+
+/* 强制 small 和辅助文本适配 */
+small,
+.small {
+    color: var(--m3-on-surface-variant);
+}

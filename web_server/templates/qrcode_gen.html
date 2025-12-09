@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}专属二维码生成{% endblock %}
+
+{% block content %}
+<div class="m3-shell">
+    <div class="m3-app-bar mb-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <a href="{{ url_for('admin') }}" class="btn btn-icon btn-m3-outline-secondary">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div class="m3-app-bar-event">专属二维码生成</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card-surface p-4">
+                <div class="mb-4">
+                    <label class="form-label fw-bold">搜索选手</label>
+                    <div class="input-group">
+                        <input type="text" id="search-input" class="form-control form-control-lg" placeholder="输入选手姓名（支持模糊搜索）">
+                        <button class="btn btn-primary" onclick="searchPlayer()">
+                            <i class="bi bi-search me-1"></i> 搜索
+                        </button>
+                    </div>
+                    <div class="form-text">支持模糊搜索，例如输入“张”将显示所有姓张的选手。</div>
+                </div>
+
+                <!-- Results List -->
+                <div id="results-list" class="list-group mb-4 d-none fade-in">
+                    <!-- Items will be injected here -->
+                </div>
+
+                <div id="result-area" class="d-none text-center fade-in">
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="resetSelection()">
+                                    <i class="bi bi-arrow-left"></i> 返回列表
+                                </button>
+                            </div>
+                            <h3 id="player-name" class="mb-1 text-primary fw-bold"></h3>
+                            <div class="text-muted small mb-3">ID: <span id="player-id"></span></div>
+                            
+                            <div class="d-flex justify-content-center mb-3">
+                                <div id="qrcode-container" class="bg-white p-3 rounded shadow-sm"></div>
+                            </div>
+                            
+                            <p class="text-muted mb-2">专属签到链接</p>
+                            <div class="input-group mb-3">
+                                <input type="text" id="link-input" class="form-control font-monospace" readonly onclick="this.select()">
+                                <button class="btn btn-outline-secondary" onclick="copyLink()">
+                                    <i class="bi bi-clipboard"></i> 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info text-start d-flex align-items-start">
+                        <i class="bi bi-info-circle-fill me-2 mt-1"></i>
+                        <div>
+                            <strong>使用说明：</strong><br>
+                            1. 选手使用手机浏览器扫描上方二维码，或访问链接。<br>
+                            2. 系统将自动识别选手身份，无需手动输入姓名。<br>
+                            3. 首次访问仍需设置密码/上传头像（如未设置）。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 使用 CDN 加载 qrcode.js，如果环境受限请替换为本地文件 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+    let qrcodeObj = null;
+
+    function searchPlayer() {
+        const name = document.getElementById('search-input').value.trim();
+        if (!name) return;
+        
+        // Hide previous results
+        document.getElementById('result-area').classList.add('d-none');
+        document.getElementById('results-list').classList.add('d-none');
+
+        fetch('/api/admin/search_player?name=' + encodeURIComponent(name))
+        .then(r => r.json())
+        .then(res => {
+            if (res.success && res.data && res.data.length > 0) {
+                renderList(res.data);
+            } else {
+                alert(res.message || '未找到匹配的选手');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('查询出错');
+        });
+    }
+
+    function renderList(players) {
+        const list = document.getElementById('results-list');
+        list.innerHTML = '';
+        list.classList.remove('d-none');
+        
+        // If only 1 result, select it automatically? 
+        // User asked for "manual selection", so maybe always show list unless it's exactly one perfect match?
+        // Let's just show list for consistency, or auto-select if length==1.
+        if (players.length === 1) {
+             showResult(players[0]);
+             return; // Don't show list if auto-selected
+        }
+
+        players.forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            btn.onclick = () => showResult(p);
+            
+            const groupBadge = p.group === 'peak' ? '<span class="badge bg-warning text-dark">巅峰组</span>' :
+                               (p.group === 'advanced' ? '<span class="badge bg-primary">进阶组</span>' : 
+                               '<span class="badge bg-success">萌新组</span>');
+            
+            btn.innerHTML = `
+                <div>
+                    <span class="fw-bold">${p.name}</span>
+                </div>
+                ${groupBadge}
+            `;
+            list.appendChild(btn);
+        });
+    }
+
+    function resetSelection() {
+        document.getElementById('result-area').classList.add('d-none');
+        // If we had a list, show it again
+        const list = document.getElementById('results-list');
+        if (list.children.length > 0) {
+            list.classList.remove('d-none');
+        }
+    }
+
+    // Removed unused fetchAdminPlayer function
+
+    function showResult(player) {
+        // Hide list
+        document.getElementById('results-list').classList.add('d-none');
+        document.getElementById('result-area').classList.remove('d-none');
+        
+        document.getElementById('player-name').textContent = player.name;
+        document.getElementById('player-id').textContent = player.id;
+        
+        const link = window.location.origin + '/?uid=' + player.id;
+        document.getElementById('link-input').value = link;
+
+        // Generate QR Code
+        const container = document.getElementById('qrcode-container');
+        container.innerHTML = ''; // Clear previous
+        qrcodeObj = new QRCode(container, {
+            text: link,
+            width: 180,
+            height: 180,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+    }
+
+    function copyLink() {
+        const input = document.getElementById('link-input');
+        input.select();
+        document.execCommand('copy'); // Fallback for older browsers
+        // navigator.clipboard.writeText(input.value).then(() => alert('已复制'));
+        alert('链接已复制');
+    }
+
+    // Enter key support
+    document.getElementById('search-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            searchPlayer();
+        }
+    });
+</script>
+<style>
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}

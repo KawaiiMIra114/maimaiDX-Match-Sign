@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- 背景圆形 -->
+    <path
+        android:fillColor="#556500"
+        android:pathData="M24,24m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0"/>
+    <!-- 奖杯 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,12H16v4h-4v8h4v4h4v4h-4v4h16v-4h-4v-4h4v-4h4v-8h-4V12zM16,20v-4h4v4H16zM28,20v-4h4v4H28z"/>
+</vector>

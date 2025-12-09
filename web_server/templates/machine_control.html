@@ -1,0 +1,71 @@
+<hr class="mt-3">
+
+{# 当前比赛阶段标签，用于提示文字 #}
+{% set stage_label = '海选比赛' %}
+{% if player.promotion_status == 'revival' %}
+    {% set stage_label = '复活赛' %}
+{% elif player.promotion_status == 'top16' %}
+    {% set stage_label = '16进8比赛' %}
+{% elif player.promotion_status == 'top8' %}
+    {% set stage_label = '8进4比赛' %}
+{% elif player.promotion_status == 'top4' %}
+    {% set stage_label = '4强赛' %}
+{% endif %}
+
+{# 是否允许当前轮由选手自己提交成绩（仅海选 + 复活赛） #}
+{% set submit_phase = '' %}
+{% if (player.promotion_status in ['none', 'eliminated'] and player.score_round1 is none) %}
+    {% set submit_phase = 'round1' %}
+{% elif player.promotion_status == 'revival' and player.score_revival is none %}
+    {% set submit_phase = 'revival' %}
+{% endif %}
+
+{% if player.promotion_status == 'eliminated' %}
+    <div class="alert alert-danger mb-3">
+        <h5 class="mb-1">已淘汰，无法上机</h5>
+        <p class="small mb-0">您当前为淘汰状态，上机/下机操作已禁用。</p>
+    </div>
+{% elif player.on_machine %}
+    <div class="alert alert-warning mb-3">
+        <h5 class="mb-1">🎮 {{ stage_label }}中...</h5>
+
+        {% if submit_phase %}
+            <p class="small mb-2">
+                本轮结束后，请在下方输入本轮成绩并提交；提交成功后将自动下机。
+            </p>
+            <form method="POST" action="{{ url_for('submit_score') }}" class="mt-2">
+                <input type="hidden" name="name" value="{{ player.name }}">
+                <input type="hidden" name="phase" value="{{ submit_phase }}">
+                <input type="number" name="score" class="form-control mb-2"
+                       placeholder="请输入本轮成绩（数字）" required step="any">
+                <button type="submit" class="btn btn-success w-100">
+                    提交成绩并下机
+                </button>
+            </form>
+        {% else %}
+            <p class="small mb-2">
+                本轮比赛由裁判记录胜负结果，您无需自行提交成绩。请在对局结束后告知裁判。
+            </p>
+        {% endif %}
+
+    <form method="POST" action="{{ url_for('toggle_machine') }}" class="mt-2">
+        <input type="hidden" name="name" value="{{ player.name }}">
+        <button type="submit" class="btn btn-outline-secondary w-100 btn-sm" id="btn-machine-toggle">
+            <i class="bi bi-stop-circle me-1"></i> 下机 / 结束当前对局
+        </button>
+    </form>
+</div>
+{% else %}
+<div class="alert alert-info mb-3">
+    <h5 class="mb-1">等待叫号上机</h5>
+    <p class="small mb-0" id="machine-status-text">
+        当裁判叫到您的序号进入 {{ stage_label }} 时，请点击下方按钮确认上机。
+    </p>
+</div>
+<form method="POST" action="{{ url_for('toggle_machine') }}">
+    <input type="hidden" name="name" value="{{ player.name }}">
+    <button type="submit" class="btn btn-primary btn-lg w-100" id="btn-machine-toggle" {% if player.promotion_status == 'eliminated' %}disabled{% endif %}>
+        <i class="bi bi-play-circle me-1"></i> 确认上机
+    </button>
+</form>
+{% endif %}

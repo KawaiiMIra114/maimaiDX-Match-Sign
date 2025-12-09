@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material You Olive Theme -->
+    <color name="primary">#556500</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="primary_container">#D7E87D</color>
+    <color name="background">#FDFCF5</color>
+    <color name="surface">#FDFCF5</color>
+    <color name="on_surface">#1B1C17</color>
+</resources>

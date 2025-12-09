@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Harbin Red Chart Tournament{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap 样式 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- 全站通用样式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/core.css') }}?v=final_fix">
+
+    {# 每个页面自己的额外样式（admin.css / index.css 等） #}
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body data-theme="light">
+
+    {# 主题切换按钮等，如果你之前是 include 这个 partial，就保留 #}
+    {# {% include 'partials/theme_toggle.html' ignore missing %} #}
+
+    <div class="m3-shell container-fluid py-3">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 全站通用 JS（主题 / 按钮水波纹等）-->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/effects.js') }}"></script>
+
+    {# 每个页面自己的额外 JS #}
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

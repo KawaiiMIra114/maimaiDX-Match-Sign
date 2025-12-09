@@ -1,0 +1,1417 @@
+{% extends 'base.html' %}
+
+{% block title %}赛事委员会后台管理{% endblock %}
+
+{% block extra_head %}
+<!-- 添加版本号 v=m3 强制刷新缓存 -->
+<!-- 添加版本号 v=m3 强制刷新缓存 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}?v=final_fix">
+<style>
+    .match-start-overlay {
+        display: none !important; /* Force hide overlay */
+    }
+    .countdown-card {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: #fff8f6;
+        /* Animation properties */
+        padding: 0 24px;
+        max-height: 0;
+        opacity: 0;
+        transform: translateY(-20px);
+        overflow: hidden;
+        transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        
+        border-radius: 24px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        z-index: 1000;
+        text-align: center;
+        border: none;
+        pointer-events: none;
+    }
+    .countdown-card.visible {
+        padding: 16px 24px;
+        max-height: 200px;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+    .countdown-timer {
+        font-size: 28px;
+        font-weight: 500;
+        color: #9c4146;
+        font-family: 'Google Sans', system-ui, -apple-system, sans-serif;
+        letter-spacing: -0.5px;
+    }
+    .countdown-text {
+        font-size: 13px;
+        color: #7d5759;
+        font-weight: 500;
+        margin-top: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="m3-shell">
+
+    <!-- 顶部 App Bar -->
+    <div class="m3-app-bar mb-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <div class="m3-app-bar-title mb-1">
+                    HARBIN RED CHART TOURNAMENT COMMITTEE
+                </div>
+                <div class="m3-app-bar-event">
+                    赛事委员会后台管理
+                </div>
+            </div>
+            <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                <div class="m3-chip text-nowrap">
+                    当前赛事
+                </div>
+                <div>
+                    <span id="current-event-name" contenteditable="true">
+                        术力口大赛
+                    </span>
+                </div>
+            </div>
+            <div>
+                <button id="enable-checkin-btn" class="btn btn-m3-outline-primary btn-sm me-2" style="display:none;">
+                    开放签到
+                </button>
+                <button id="start-match-btn" class="btn btn-m3-primary btn-sm me-2">
+                    <i class="bi bi-play-fill me-1"></i>开始比赛
+                </button>
+                <a href="{{ url_for('admin_qrcode') }}" class="btn btn-m3-tonal btn-sm me-2">
+                    <i class="bi bi-qr-code-scan me-1"></i>二维码
+                </a>
+                <a href="{{ url_for('admin_logout') }}" class="btn btn-m3-outline-secondary btn-sm">
+                    退出后台
+                </a>
+                <button type="button" class="btn btn-warning btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#testStartModal">
+                    ⚠️ 测试开启
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 顶部统计 -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-2 col-6">
+            <div class="metric-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="mb-0">总名单</h6>
+                    <span class="metric-chip">all</span>
+                </div>
+                <h3 class="mb-0" id="stat-total">{{ total }}</h3>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="metric-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="mb-0">已签到</h6>
+                    <span class="metric-chip metric-chip-oncolor">check-in</span>
+                </div>
+                <h3 class="mb-0" id="stat-checked">{{ checked }}</h3>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="metric-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="mb-0">已分配序号</h6>
+                    <span class="metric-chip metric-chip-oncolor">seed</span>
+                </div>
+                <h3 class="mb-0" id="stat-numbered">{{ numbered }}</h3>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="metric-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="mb-0">当前 16 强</h6>
+                    <span class="metric-chip metric-chip-oncolor">top 16</span>
+                </div>
+                <h3 class="mb-0" id="stat-promoted-16">{{ promoted_16 }}</h3>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="metric-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="mb-0">当前 4 强</h6>
+                    <span class="metric-chip metric-chip-oncolor">top 4</span>
+                </div>
+                <h3 class="mb-0" id="stat-promoted-4">{{ promoted_4 }}</h3>
+            </div>
+        </div>
+        <div class="col-md-2 col-6">
+            <div class="metric-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="mb-0">复活赛名额</h6>
+                    <span class="metric-chip">revival</span>
+                </div>
+                <h3 class="mb-0" id="stat-revival">{{ revival_count }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- 组别最大序号 -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <div class="alert alert-secondary mb-0">
+                <strong>萌新组当前最大序号：</strong> {{ max_beg or 0 }}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="alert alert-secondary mb-0">
+                <strong>进阶组当前最大序号：</strong> {{ max_adv or 0 }}
+            </div>
+        </div>
+    </div>
+
+    <!-- flash 信息 -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'info' if category == 'message' else category }} alert-dismissible fade show"
+        role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- 操作区：导入名单 + 比赛控制 + 抽选入口 -->
+    <div class="card mb-4">
+        <div class="card-header">赛事控制台</div>
+        <div class="card-body">
+            <div class="row g-4">
+                <!-- 导入名单 -->
+                <div class="col-lg-5">
+                    <h5 class="mb-2">1. 导入选手名单</h5>
+                    <div class="small text-muted mb-2">
+                        当前导入目标组别：
+                        <span id="current-group-display" class="group-label-display text-success">萌新组</span>
+                    </div>
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="add">
+                        <input type="hidden" name="player_group" id="player-group-input" value="beginner">
+
+                        <div class="btn-group w-100 mb-3" role="group">
+                            <button type="button" class="btn group-toggle-btn" id="btn-beginner" data-group="beginner">
+                                萌新组
+                            </button>
+                            <button type="button" class="btn group-toggle-btn" id="btn-advanced" data-group="advanced">
+                                进阶组
+                            </button>
+                            <button type="button" class="btn group-toggle-btn" id="btn-peak" data-group="peak">
+                                巅峰组
+                            </button>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small">方式 A：上传 CSV 文件</label>
+                            <input type="file" name="csv_file" class="form-control form-control-sm" accept=".csv">
+                            <div class="small text-muted mt-1">
+                                第一列姓名，第二列 Rating（可选），第三列组别（可选，支持“萌新/进阶”）。
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small">方式 B：粘贴名单</label>
+                            <textarea name="names" class="form-control form-control-sm" rows="3"
+                                placeholder="一行一个，支持“姓名 Rating”（例：Milk 13500）。不填 Rating 则为 0。"></textarea>
+                        </div>
+
+                        <button class="btn btn-primary w-100">添加选手</button>
+                    </form>
+                </div>
+
+                <!-- 比赛控制 -->
+                <div class="col-lg-7">
+                    <h5 class="mb-2">2. 比赛流程控制</h5>
+
+                    <div class="mb-3">
+                        <form method="POST" id="generate-form">
+                            <input type="hidden" name="action" value="generate">
+                            <button type="submit" class="btn w-100 py-2" id="generate-btn"
+                                data-locked="{{ 1 if match_generated else 0 }}">
+                                🎲 结束签到并生成分组随机序号
+                            </button>
+                        </form>
+                        <div class="small text-muted mt-1">
+                            · 首次可直接使用；执行一次后锁定。若需重新随机所有已签到选手的序号，请点击后通过密码解锁。
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-6">
+                            <form method="POST" onsubmit="return confirm('根据海选成绩自动生成各组晋级名单（萌新组 Top 7+Revival，进阶组 Top 15+Revival），确定继续？');">
+                                <input type="hidden" name="action" value="promote_16">
+                                <button class="btn btn-warning w-100 text-dark">
+                                    ⭐ 自动生成海选晋级 & 复活赛名单
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-sm-6">
+                            <form method="POST">
+                                <input type="hidden" name="action" value="promote_4">
+                                <button class="btn m3-outlined-btn w-100">
+                                    🏆 4 强阶段说明
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <div>
+                            <form method="POST" class="d-inline-block">
+                                <input type="hidden" name="action" value="sort_scores">
+                                <button type="submit" class="btn btn-secondary btn-sm">
+                                    🥇 按海选成绩排序
+                                </button>
+                            </form>
+                            <form method="POST" class="d-inline-block ms-1">
+                                <input type="hidden" name="action" value="sort_rating">
+                                <button type="submit" class="btn btn-info btn-sm text-white">
+                                    📊 按组别 + Rating 排序
+                                </button>
+                            </form>
+
+                            <button type="button" class="btn btn-outline-danger btn-sm ms-1 danger-locked"
+                                id="clear-all-btn">
+                                🧨 清除所有选手数据
+                            </button>
+                        </div>
+
+                        <form method="GET" class="d-flex align-items-center gap-1">
+                            <input type="text" class="form-control form-control-sm" name="q" placeholder="按姓名查找"
+                                value="{{ name_query or '' }}">
+                            {% if request.args.get('sort') %}
+                            <input type="hidden" name="sort" value="{{ request.args.get('sort') }}">
+                            {% endif %}
+                            <button class="btn btn-outline-secondary btn-sm" type="submit">查找</button>
+                        </form>
+                    </div>
+
+                    <div class="small text-muted mb-3">
+                        · 进阶组使用 16→8 / 8→4 标记；萌新组使用 8→4 / 4→2 标记；巅峰组不使用分数，由人工设置状态并生成 4→2 / 决赛对阵。<br>
+                        · “清除所有选手数据”为极高风险操作，仅在全部比赛结束且确认无误时使用。
+                    </div>
+
+                    <!-- 抽选大屏入口（含半决赛） -->
+                    <div class="border-top pt-3 mt-3">
+                        <h6 class="mb-2">3. 曲目抽选大屏</h6>
+                        <div class="small text-muted mb-2">
+                            为每个阶段 / 组别打开独立大屏窗口；抽选过程会同步到选手端。
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <div class="card card-body p-2">
+                                    <div class="small mb-1">海选赛 · 萌新组</div>
+                                    <button type="button" class="btn btn-sm m3-outlined-btn w-100"
+                                        onclick="openDrawScreen('qualifier','beginner')">
+                                        打开抽选大屏
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card card-body p-2">
+                                    <div class="small mb-1">海选赛 · 进阶组</div>
+                                    <button type="button" class="btn btn-sm m3-outlined-btn w-100"
+                                        onclick="openDrawScreen('qualifier','advanced')">
+                                        打开抽选大屏
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card card-body p-2">
+                                    <div class="small mb-1">复活赛 · 萌新组</div>
+                                    <button type="button" class="btn btn-sm m3-tonal-btn w-100"
+                                        onclick="openDrawScreen('revival','beginner')">
+                                        打开抽选大屏
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <div class="card card-body p-2">
+                                    <div class="small mb-1">复活赛 · 进阶组</div>
+                                    <button type="button" class="btn btn-sm m3-tonal-btn w-100"
+                                        onclick="openDrawScreen('revival','advanced')">
+                                        打开抽选大屏
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card card-body p-2">
+                                    <div class="small mb-1">半决赛 · 萌新组</div>
+                                    <button type="button" class="btn btn-sm btn-warning w-100 text-dark"
+                                        onclick="openDrawScreen('semifinal','beginner')">
+                                        打开抽选大屏
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card card-body p-2">
+                                    <div class="small mb-1">半决赛 · 进阶组</div>
+                                    <button type="button" class="btn btn-sm btn-warning w-100 text-dark"
+                                        onclick="openDrawScreen('semifinal','advanced')">
+                                        打开抽选大屏
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <div class="card card-body p-2">
+                                    <div class="small mb-1">决赛 · 萌新组</div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger w-100"
+                                        onclick="openDrawScreen('final','beginner')">
+                                        打开抽选大屏
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card card-body p-2">
+                                    <div class="small mb-1">决赛 · 进阶组</div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger w-100"
+                                        onclick="openDrawScreen('final','advanced')">
+                                        打开抽选大屏
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card card-body p-2">
+                                    <div class="small mb-1">海选赛 · 巅峰组</div>
+                                    <button type="button" class="btn btn-sm btn-outline-warning w-100 text-dark"
+                                        onclick="openDrawScreen('qualifier','peak')">
+                                        打开抽选大屏
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="small text-muted">
+                            大屏上的 “开始 / 停止” 按钮控制本阶段本组抽选；选手端只会看到和自己所在组别相符的抽选最终结果。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 选手列表 -->
+    <div class="card mb-4">
+        <div class="card-header">选手列表与批量操作 {{ sort_message }}</div>
+        <div class="card-body">
+            <ul class="nav nav-tabs mb-3" id="playerTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="beginner-tab" data-bs-toggle="tab" data-bs-target="#beginner" type="button" role="tab">萌新组</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button" role="tab">进阶组</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="peak-tab" data-bs-toggle="tab" data-bs-target="#peak" type="button" role="tab">巅峰组</button>
+                </li>
+            </ul>
+
+            <form method="POST">
+                <input type="hidden" name="action" value="save_all" id="main-action">
+
+                <div class="sticky-actions mb-2">
+                    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm"
+                                onclick="document.getElementById('main-action').value='save_all'">
+                                💾 保存所有修改
+                            </button>
+                            
+                            <!-- 萌新组专用：标记 8 强 -->
+                            <button type="submit" class="btn btn-success btn-sm" id="btn-mark-8"
+                                onclick="document.getElementById('main-action').value='mark_top8_selected'">
+                                ♻️ 将勾选选手标记为本组 8 强
+                            </button>
+
+                            <!-- 进阶组专用：标记 16 强 -->
+                            <button type="submit" class="btn btn-success btn-sm" id="btn-mark-16"
+                                onclick="document.getElementById('main-action').value='revive_selected'"
+                                style="display: none;">
+                                ♻️ 将勾选选手标记为本组 16 强
+                            </button>
+
+                            <button type="submit" class="btn btn-outline-danger btn-sm"
+                                onclick="document.getElementById('main-action').value='eliminate_selected'">
+                                ❌ 淘汰勾选选手
+                            </button>
+                            <button type="submit" class="btn m3-btn-error btn-sm"
+                                onclick="if(!confirm('⚠️ 确定要从数据库中完全删除勾选的选手吗？\n此操作不可恢复！')) return false; document.getElementById('main-action').value='delete_selected'">
+                                🗑️ 删除勾选选手
+                            </button>
+                        </div>
+                        <span class="small text-muted">
+                            · 左侧勾选后可批量复活/淘汰/删除；保存时会同步应用成绩、状态与 16→8 / 8→4 结果。
+                        </span>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="playerTabsContent">
+                    <!-- 萌新组 -->
+                    <div class="tab-pane fade show active" id="beginner" role="tabpanel">
+                        <div class="d-flex justify-content-end gap-2 mb-2">
+                             <button type="button" class="btn btn-outline-dark btn-sm" onclick="generateMatch('top8', 'beginner')">
+                                🎲 生成萌新组 8进4 对阵
+                             </button>
+                             <button type="button" class="btn btn-outline-dark btn-sm" onclick="generateMatch('top4', 'beginner')">
+                                🎲 生成萌新组 4进2 对阵
+                             </button>
+                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="generateMatch('final', 'beginner')">
+                                🎲 生成萌新组 决赛对阵
+                             </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width:36px;"><input type="checkbox" class="check-all-tab" data-target="#beginner"></th>
+                                        <th>ID</th><th>姓名</th><th>Rating</th><th>组别</th><th>签到</th><th>上机</th>
+                                        <th>海选序号</th><th>海选成绩</th><th>复活赛成绩</th>
+                                        <th>8进4结果</th><th>4进2结果</th><th>当前状态</th><th style="width:60px;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for p in players if p.group == 'beginner' %}
+                                    {% include 'partials/player_row.html' %}
+                                {% else %}
+                                    <tr><td colspan="14" class="text-center text-muted py-3">暂无萌新组选手</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 进阶组 -->
+                    <div class="tab-pane fade" id="advanced" role="tabpanel">
+                        <div class="d-flex justify-content-end gap-2 mb-2">
+                             <button type="button" class="btn btn-outline-dark btn-sm" onclick="generateMatch('top16', 'advanced')">
+                                🎲 生成进阶组 16进8 对阵
+                             </button>
+                             <button type="button" class="btn btn-outline-dark btn-sm" onclick="generateMatch('top8', 'advanced')">
+                                🎲 生成进阶组 8进4 对阵
+                             </button>
+                             <button type="button" class="btn btn-outline-dark btn-sm" onclick="generateMatch('top4', 'advanced')">
+                                🎲 生成进阶组 4进2 对阵
+                             </button>
+                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="generateMatch('final', 'advanced')">
+                                🎲 生成进阶组 决赛对阵
+                             </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width:36px;"><input type="checkbox" class="check-all-tab" data-target="#advanced"></th>
+                                        <th>ID</th><th>姓名</th><th>Rating</th><th>组别</th><th>签到</th><th>上机</th>
+                                        <th>海选序号</th><th>海选成绩</th><th>复活赛成绩</th>
+                                        <th>16进8结果</th><th>8进4结果</th><th>当前状态</th><th style="width:60px;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for p in players if p.group == 'advanced' %}
+                                    {% include 'partials/player_row.html' %}
+                                {% else %}
+                                    <tr><td colspan="14" class="text-center text-muted py-3">暂无进阶组选手</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 巅峰组 -->
+                    <div class="tab-pane fade" id="peak" role="tabpanel">
+                         <div class="d-flex justify-content-end gap-2 mb-2">
+                             <button type="button" class="btn btn-outline-primary btn-sm" onclick="generateMatch('top4', 'peak')">
+                                🎲 生成巅峰组 4进2 对阵
+                             </button>
+                             <button type="button" class="btn btn-outline-success btn-sm" onclick="generateMatch('final', 'peak')">
+                                🎲 生成巅峰组 决赛对阵
+                             </button>
+                         </div>
+
+                         <!-- 巅峰组选曲概览 -->
+                         <div class="card card-body mb-2">
+                             <div class="d-flex justify-content-between align-items-center">
+                                 <h6 class="mb-0">巅峰组选曲概览</h6>
+                                 <div class="btn-group btn-group-sm" role="group">
+                                     <button class="btn btn-outline-secondary" id="btn-peak-overview-top4">4进2</button>
+                                     <button class="btn btn-outline-secondary" id="btn-peak-overview-final">决赛</button>
+                                 </div>
+                             </div>
+                             <div class="small text-muted">当四位选手全部提交后，选手端将自动显示对方选曲。</div>
+                             <div id="peak-overview-status" class="mt-2 small"></div>
+                             <div id="peak-overview-list" class="mt-2"></div>
+                         </div>
+                         <div class="table-responsive">
+                            <table class="table table-striped table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width:36px;"><input type="checkbox" class="check-all-tab" data-target="#peak"></th>
+                                        <th>ID</th><th>姓名</th><th>Rating</th><th>组别</th><th>签到</th><th>上机</th>
+                                        <th>海选序号</th><th>海选成绩</th>
+                                        <th>4进2结果</th><th>当前状态</th><th style="width:60px;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for p in players if p.group == 'peak' %}
+                                    {% include 'partials/player_row.html' %}
+                                {% else %}
+                                    <tr><td colspan="14" class="text-center text-muted py-3">暂无巅峰组选手</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 曲目管理 -->
+    <div class="card mb-4">
+        <div class="card-header">曲目管理</div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data" class="row gy-2 gx-2 align-items-end">
+                <input type="hidden" name="action" value="add_song">
+                <div class="col-md-4">
+                    <label class="form-label small">赛程阶段（单曲/批量）</label>
+                    <select class="form-select form-select-sm" name="song_phase">
+                        <option value="qualifier">海选赛</option>
+                        <option value="revival">复活赛</option>
+                        <option value="semifinal">半决赛</option>
+                        <option value="final">决赛</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">组别（单曲/批量）</label>
+                    <select class="form-select form-select-sm" name="song_group">
+                        <option value="beginner">萌新组</option>
+                        <option value="advanced">进阶组</option>
+                        <option value="peak">巅峰组</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">单个曲目名称</label>
+                    <input type="text" class="form-control form-control-sm" name="song_name" placeholder="填写则按单曲添加">
+                </div>
+                <div class="col-md-4 mt-2">
+                    <label class="form-label small">曲目图片 (单曲可选)</label>
+                    <input type="file" class="form-control form-control-sm" name="song_image" accept="image/*">
+                </div>
+                <div class="col-md-8 mt-2">
+                    <label class="form-label small">批量曲名（可选，一行一个）</label>
+                    <textarea class="form-control form-control-sm" name="song_names_bulk" rows="3"
+                        placeholder="若填写此处，将按行批量添加曲目名称（上面的阶段+组别会作用于整批）。"></textarea>
+                </div>
+                <div class="col-12 mt-2">
+                    <label class="form-label small">曲目包 ZIP（可选：CSV + 曲绘图片）</label>
+                    <input type="file" class="form-control form-control-sm" name="song_package" accept=".zip">
+                    <div class="form-text text-muted">
+                        若上传 ZIP，将优先按 ZIP 导入，忽略上方单曲 / 批量输入。CSV 支持中英文赛程/组别描述。
+                    </div>
+                </div>
+                <div class="col-12 mt-2">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        添加曲目（单曲 / 批量 / ZIP）
+                    </button>
+                </div>
+            </form>
+
+            <hr class="my-3">
+
+            <div class="row g-3 small">
+                <div class="col-md-4">
+                    <h6>海选赛 · 萌新组</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for s in songs_q_beg %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-truncate">{{ s.name }}</span>
+                            <form method="POST" class="ms-2">
+                                <input type="hidden" name="action" value="delete_song">
+                                <input type="hidden" name="song_id" value="{{ s.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">删</button>
+                            </form>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">暂无曲目</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="col-md-4">
+                    <h6>复活赛 · 萌新组</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for s in songs_r_beg %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-truncate">{{ s.name }}</span>
+                            <form method="POST" class="ms-2">
+                                <input type="hidden" name="action" value="delete_song">
+                                <input type="hidden" name="song_id" value="{{ s.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">删</button>
+                            </form>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">暂无曲目</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="col-md-4">
+                    <h6>半决赛 · 萌新组</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for s in songs_s_beg %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-truncate">{{ s.name }}</span>
+                            <form method="POST" class="ms-2">
+                                <input type="hidden" name="action" value="delete_song">
+                                <input type="hidden" name="song_id" value="{{ s.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">删</button>
+                            </form>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">暂无曲目</li>
+                        {% endfor %}
+                    </ul>
+
+                    <h6 class="mt-3">决赛 · 萌新组</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for s in songs_f_beg %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-truncate">{{ s.name }}</span>
+                            <form method="POST" class="ms-2">
+                                <input type="hidden" name="action" value="delete_song">
+                                <input type="hidden" name="song_id" value="{{ s.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">删</button>
+                            </form>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">暂无曲目</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="col-md-4">
+                    <h6 class="mt-3">海选赛 · 进阶组</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for s in songs_q_adv %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-truncate">{{ s.name }}</span>
+                            <form method="POST" class="ms-2">
+                                <input type="hidden" name="action" value="delete_song">
+                                <input type="hidden" name="song_id" value="{{ s.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">删</button>
+                            </form>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">暂无曲目</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="col-md-4">
+                    <h6 class="mt-3">复活赛 · 进阶组</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for s in songs_r_adv %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-truncate">{{ s.name }}</span>
+                            <form method="POST" class="ms-2">
+                                <input type="hidden" name="action" value="delete_song">
+                                <input type="hidden" name="song_id" value="{{ s.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">删</button>
+                            </form>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">暂无曲目</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="col-md-4">
+                    <h6 class="mt-3">半决赛 · 进阶组</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for s in songs_s_adv %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-truncate">{{ s.name }}</span>
+                            <form method="POST" class="ms-2">
+                                <input type="hidden" name="action" value="delete_song">
+                                <input type="hidden" name="song_id" value="{{ s.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">删</button>
+                            </form>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">暂无曲目</li>
+                        {% endfor %}
+                    </ul>
+
+                    <h6 class="mt-3">决赛 · 进阶组</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for s in songs_f_adv %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-truncate">{{ s.name }}</span>
+                            <form method="POST" class="ms-2">
+                                <input type="hidden" name="action" value="delete_song">
+                                <input type="hidden" name="song_id" value="{{ s.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">删</button>
+                            </form>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">暂无曲目</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="col-md-4">
+                    <h6 class="mt-3">海选赛 · 巅峰组</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for s in songs_q_peak %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-truncate">{{ s.name }}</span>
+                            <form method="POST" class="ms-2">
+                                <input type="hidden" name="action" value="delete_song">
+                                <input type="hidden" name="song_id" value="{{ s.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">删</button>
+                            </form>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted">暂无曲目</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 解锁随机分组 Modal -->
+<div class="modal fade" id="unlockGenerateModal" tabindex="-1" aria-labelledby="unlockGenerateModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" class="modal-content">
+            <input type="hidden" name="action" value="unlock_generate">
+            <div class="modal-header">
+                <h5 class="modal-title" id="unlockGenerateModalLabel">解锁随机分组（高危操作）</h5>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2 text-danger fw-bold">
+                    高危操作，请得到批准后输入密码继续。
+                </p>
+                <p class="small text-muted mb-3">
+                    解锁后，“结束签到并生成分组随机序号”按钮将再次生效，并重新随机所有已签到选手的序号。
+                </p>
+                <input type="password" name="generate_password" class="form-control" placeholder="请输入解锁密码" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" class="btn btn-danger">确认解锁</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 清除所有数据 Modal -->
+<div class="modal fade" id="clearAllModal" tabindex="-1" aria-labelledby="clearAllModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" class="modal-content">
+            <input type="hidden" name="action" value="clear_all_secure">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clearAllModalLabel">清除所有选手数据（高危操作）</h5>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2 text-danger fw-bold">
+                    此操作为高危操作，请得到批准后输入正确的密码进行操作！
+                </p>
+                <p class="small text-muted mb-3">
+                    执行后将删除所有选手数据，并重置系统状态。该操作不可恢复。
+                </p>
+                <input type="password" name="clear_password" class="form-control" placeholder="请输入密码" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" class="btn btn-danger">确认清除</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 测试开启 Modal -->
+<div class="modal fade" id="testStartModal" tabindex="-1" aria-labelledby="testStartModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" class="modal-content">
+            <input type="hidden" name="action" value="test_start_match">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testStartModalLabel">测试开启（同时开放签到+开始比赛）</h5>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2 text-warning fw-bold">
+                    此操作用于测试流程，将跳过倒计时！
+                </p>
+                <p class="small text-muted mb-3">
+                    执行后：<br>
+                    1. 签到通道立即开放。<br>
+                    2. 比赛状态变为“已开始”。<br>
+                    3. <b>不启动</b> 1小时倒计时，也不会自动触发超时弃权。<br>
+                    请输入密码确认。
+                </p>
+                <input type="password" name="test_start_password" class="form-control" placeholder="请输入密码" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" class="btn btn-warning text-dark">确认开启</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 打开抽选大屏
+    function openDrawScreen(phase, group) {
+        const base = "{{ url_for('draw_screen') }}";
+        const url = base + "?phase=" + phase + "&group=" + group;
+        window.open(url, "_blank", "width=1280,height=720");
+    }
+
+    // 组别按钮切换
+    const groupInput = document.getElementById('player-group-input');
+    const groupDisplay = document.getElementById('current-group-display');
+    const btnBeginner = document.getElementById('btn-beginner');
+    const btnAdvanced = document.getElementById('btn-advanced');
+    const btnPeak = document.getElementById('btn-peak');
+
+    function updateGroupDisplay(group) {
+        if (!groupInput) return;
+
+        // Reset all
+        [btnBeginner, btnAdvanced, btnPeak].forEach(btn => {
+            if (btn) {
+                btn.style.background = '#f8f9fa';
+                btn.style.borderColor = '#cbd5e1';
+                btn.style.color = '#1f2937';
+            }
+        });
+
+        if (group === 'beginner') {
+            groupInput.value = 'beginner';
+            groupDisplay.textContent = '萌新组';
+            groupDisplay.className = 'group-label-display text-success';
+
+            btnBeginner.style.background = '#e0f2f1';
+            btnBeginner.style.borderColor = '#26a69a';
+            btnBeginner.style.color = '#00695c';
+        } else if (group === 'peak') {
+            groupInput.value = 'peak';
+            groupDisplay.textContent = '巅峰组';
+            groupDisplay.className = 'group-label-display text-warning'; // Gold-ish
+
+            if (btnPeak) {
+                btnPeak.style.background = '#fffbeb';
+                btnPeak.style.borderColor = '#f59e0b';
+                btnPeak.style.color = '#b45309';
+            }
+        } else {
+            groupInput.value = 'advanced';
+            groupDisplay.textContent = '进阶组';
+            groupDisplay.className = 'group-label-display text-primary';
+
+            btnAdvanced.style.background = '#e5ecff';
+            btnAdvanced.style.borderColor = '#4f46e5';
+            btnAdvanced.style.color = '#1e3a8a';
+        }
+    }
+
+    if (btnBeginner && btnAdvanced) {
+        btnBeginner.addEventListener('click', () => updateGroupDisplay('beginner'));
+        btnAdvanced.addEventListener('click', () => updateGroupDisplay('advanced'));
+        if (btnPeak) btnPeak.addEventListener('click', () => updateGroupDisplay('peak'));
+        // 初始化
+        updateGroupDisplay(groupInput.value || 'beginner');
+    }
+
+    // 全选 (Tab specific)
+    document.querySelectorAll('.check-all-tab').forEach(checkAll => {
+        checkAll.addEventListener('change', () => {
+            const targetId = checkAll.dataset.target;
+            const targetPane = document.querySelector(targetId);
+            if(targetPane) {
+                targetPane.querySelectorAll('input[name="selected_players"]').forEach(cb => {
+                    cb.checked = checkAll.checked;
+                });
+            }
+        });
+    });
+
+    // 删除选手
+    function deletePlayer(id, name) {
+        if (!confirm(`⚠️ 确定要从数据库中完全删除选手 “${name}” (ID: ${id}) 吗？\n此操作不可恢复！`)) {
+            return;
+        }
+        // 创建一个临时 form 提交 POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.style.display = 'none';
+
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'delete_player';
+        form.appendChild(actionInput);
+
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'player_id';
+        idInput.value = id;
+        form.appendChild(idInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // 结束签到按钮：锁定样式 + 弹出解锁 modal
+    const generateBtn = document.getElementById('generate-btn');
+    const generateForm = document.getElementById('generate-form');
+
+    function updateGenerateButtonStyle() {
+        if (!generateBtn) return;
+        const locked = generateBtn.dataset.locked === '1';
+        if (locked) {
+            generateBtn.classList.remove('btn-success');
+            generateBtn.classList.add('btn-secondary', 'generate-locked');
+            generateBtn.innerText = '🎲 已锁定：结束签到并生成分组随机序号';
+        } else {
+            generateBtn.classList.remove('btn-secondary', 'generate-locked');
+            generateBtn.classList.add('btn-success');
+            generateBtn.innerText = '🎲 结束签到并生成分组随机序号';
+        }
+    }
+
+    if (generateBtn && generateForm) {
+        updateGenerateButtonStyle();
+        generateBtn.addEventListener('click', function (ev) {
+            const locked = generateBtn.dataset.locked === '1';
+            if (locked) {
+                ev.preventDefault();
+                const modalEl = document.getElementById('unlockGenerateModal');
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        });
+    }
+
+    // 清除所有数据弹窗
+    const clearAllBtn = document.getElementById('clear-all-btn');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            const modalEl = document.getElementById('clearAllModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        });
+    }
+    // 生成对阵 API 调用
+    function generateMatch(phase, group) {
+        if (!confirm(`确定要生成 [${group == 'beginner' ? '萌新组' : (group == 'advanced' ? '进阶组' : '巅峰组')}] 的 [${phase}] 对阵吗？\n请确保上一轮比赛已结束且选手状态已更新！`)) {
+            return;
+        }
+
+        fetch('/api/v1/match/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phase: phase, group: group })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('生成成功: ' + data.message);
+                    window.location.reload();
+                } else {
+                    alert('生成失败: ' + data.message);
+                }
+            })
+            .catch(err => alert('网络错误'));
+    }
+
+    // 巅峰组选曲概览
+    function loadPeakOverview(phase) {
+        const statusEl = document.getElementById('peak-overview-status');
+        const listEl = document.getElementById('peak-overview-list');
+        statusEl.textContent = '加载中…';
+        listEl.innerHTML = '';
+        fetch(`/api/v1/peak/matches_overview?phase=${phase}`)
+            .then(r => r.json())
+            .then(d => {
+                if (!d.success) { statusEl.textContent = d.message || '加载失败'; return; }
+                const data = d.data || {};
+                statusEl.textContent = data.reveal_ready ? '✅ 所有选手已提交，已向选手端公开对手选曲。' : '⌛ 尚有选手未提交，暂不公开对手选曲。';
+                if (!data.matches || data.matches.length === 0) { listEl.innerHTML = '<div class="text-muted small">暂无对阵</div>'; return; }
+                const html = data.matches.map(m => {
+                    const s1 = m.selection1 ? `${m.selection1.song_name} (Lv.${m.selection1.difficulty})` : '<span class="text-muted">未提交</span>';
+                    const s2 = m.selection2 ? `${m.selection2.song_name} (Lv.${m.selection2.difficulty})` : '<span class="text-muted">未提交</span>';
+                    return `
+                        <div class="border rounded p-2 mb-2">
+                            <div class="d-flex justify-content-between">
+                                <div><strong>${m.player1.name}</strong> <span class="text-muted small">(Rating: ${m.player1.rating ?? '-'})</span></div>
+                                <div><strong>VS</strong></div>
+                                <div><strong>${m.player2.name}</strong> <span class="text-muted small">(Rating: ${m.player2.rating ?? '-'})</span></div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col">
+                                    <div class="small text-muted">${m.player1.name} 的自选</div>
+                                    <div>${s1}</div>
+                                </div>
+                                <div class="col">
+                                    <div class="small text-muted">${m.player2.name} 的自选</div>
+                                    <div>${s2}</div>
+                                </div>
+                            </div>
+                        </div>`;
+                }).join('');
+                listEl.innerHTML = html;
+            })
+            .catch(() => { statusEl.textContent = '网络错误'; });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnTop4 = document.getElementById('btn-peak-overview-top4');
+        const btnFinal = document.getElementById('btn-peak-overview-final');
+        if (btnTop4 && btnFinal) {
+            btnTop4.addEventListener('click', () => loadPeakOverview('top4'));
+            btnFinal.addEventListener('click', () => loadPeakOverview('final'));
+            loadPeakOverview('top4');
+        }
+    });
+
+    // Tab switch listener for button visibility
+    document.addEventListener('DOMContentLoaded', function() {
+        var tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+        var btn16 = document.getElementById('btn-mark-16');
+        var btn8 = document.getElementById('btn-mark-8');
+
+        function updateButtons(targetId) {
+            if (!btn16 || !btn8) return;
+            if (targetId === '#beginner') {
+                btn8.style.display = 'inline-block';
+                btn16.style.display = 'none';
+            } else if (targetId === '#advanced') {
+                btn8.style.display = 'none';
+                btn16.style.display = 'inline-block';
+            } else {
+                // Peak or others
+                btn8.style.display = 'none';
+                btn16.style.display = 'none';
+            }
+        }
+
+        tabEls.forEach(function(tabEl) {
+            tabEl.addEventListener('shown.bs.tab', function (event) {
+                updateButtons(event.target.getAttribute('data-bs-target'));
+            });
+        });
+        
+        // Initialize based on active tab
+        var activeTab = document.querySelector('.nav-link.active');
+        if(activeTab) {
+            updateButtons(activeTab.getAttribute('data-bs-target'));
+        }
+    });
+</script>
+
+<!-- 后台实时状态轮询：有数据变化时自动刷新（不打断正在编辑的表单） -->
+<script>
+    (function () {
+        const POLL_INTERVAL_MS = 2000;
+
+        let lastSnapshot = null;
+        let formDirty = false;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const inputs = document.querySelectorAll(
+                'input[type="text"],' +
+                'input[type="number"],' +
+                'input[type="checkbox"],' +
+                'input[type="file"],' +
+                'textarea,' +
+                'select'
+            );
+            inputs.forEach(function (el) {
+                el.addEventListener('input', function () { formDirty = true; });
+                el.addEventListener('change', function () { formDirty = true; });
+            });
+
+            const forms = document.querySelectorAll('form');
+            forms.forEach(function (f) {
+                f.addEventListener('submit', function () {
+                    formDirty = false;
+                });
+            });
+
+            pollAdminState();
+        });
+
+        function pollAdminState() {
+            fetch("{{ url_for('admin_state_api') }}", { cache: 'no-store' })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('status ' + resp.status);
+                    return resp.json();
+                })
+                .then(function (data) {
+                    if (data && data.error) return;
+
+                    // 更新顶部统计数据 (无缝更新 DOM)
+                    updateDashboard(data);
+
+                    // 检查是否需要刷新整个页面 (仅当关键状态改变且未在编辑时)
+                    // const snapshot = JSON.stringify(data);
+                    // if (lastSnapshot === null) {
+                    //     lastSnapshot = snapshot;
+                    // } else if (snapshot !== lastSnapshot) {
+                    //     lastSnapshot = snapshot;
+                    //     if (!formDirty) {
+                    //         window.location.reload();
+                    //     }
+                    // }
+                })
+                .catch(function (err) {
+                    console.warn('admin_state_api error:', err);
+                })
+                .finally(function () {
+                    setTimeout(pollAdminState, POLL_INTERVAL_MS);
+                });
+        }
+
+        function updateDashboard(data) {
+            // 更新顶部卡片数字
+            const map = {
+                'total': data.total,
+                'checked': data.checked,
+                'numbered': data.numbered,
+                'promoted_16': data.promoted_16 || 0, // API可能没返回这些字段，需要后端补全
+                'promoted_4': data.promoted_4 || 0,
+                'revival_count': data.revival_count || 0
+            };
+
+            // 简单 DOM 更新
+            // 注意：需要给 admin.html 的对应元素加 ID
+            // 这里为了简化，假设已经有了或者我们通过 DOM 查找
+            // 现有的 admin.html 结构比较复杂，我们先通过 textContent 更新
+            // 为了准确，我们需要在 HTML 模板中给这些数字加上 ID
+            // 暂时通过 querySelectorAll 遍历 metric-card 更新? 
+            // 更好的方式是修改 HTML 加 ID，这里先假设我们已经修改了 HTML
+            
+            if(document.getElementById('stat-total')) document.getElementById('stat-total').textContent = data.total;
+            if(document.getElementById('stat-checked')) document.getElementById('stat-checked').textContent = data.checked;
+            if(document.getElementById('stat-numbered')) document.getElementById('stat-numbered').textContent = data.numbered;
+            if(document.getElementById('stat-revival')) document.getElementById('stat-revival').textContent = data.revival_count;
+            // 其他字段 admin_state_api 可能还没返回，需要后端补充
+        }
+    })();
+</script>
+
+<!-- 比赛开始按钮覆盖层 (已移除) -->
+<!-- 
+<div id="match-start-overlay" class="match-start-overlay" style="display: none;">
+    <div class="match-start-blur"></div>
+    <div class="match-start-button-container">
+        <button id="start-match-btn-overlay" class="btn btn-lg btn-primary" style="transform: scale(1.5);">开始比赛</button>
+    </div>
+</div>
+-->
+
+<!-- 开始比赛确认弹窗 -->
+<div class="modal fade" id="start-match-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确定开始比赛吗？</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>比赛开始后将开启 1 小时签到倒计时，倒计时结束后未签到选手将被自动取消资格。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="confirm-start-btn">确认</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 倒计时卡片 -->
+<div id="countdown-card" class="countdown-card">
+    <div class="countdown-timer" id="countdown-timer">01:00:00</div>
+    <div class="countdown-text">签到倒计时</div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化比赛开始状态
+        checkSystemState();
+        
+        // 开启签到
+        const checkinBtn = document.getElementById('enable-checkin-btn');
+        if (checkinBtn) {
+            checkinBtn.addEventListener('click', () => {
+                if(confirm('确定要手动开放签到吗？')) {
+                    fetch('/api/v1/admin/enable_checkin', { method: 'POST' })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert(data.message);
+                                checkSystemState();
+                            } else {
+                                alert(data.message);
+                            }
+                        });
+                }
+            });
+        }
+        
+        // 开始比赛按钮点击事件
+        const startBtn = document.getElementById('start-match-btn');
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
+                new bootstrap.Modal(document.getElementById('start-match-modal')).show();
+            });
+        }
+
+        // 确认开始比赛
+        document.getElementById('confirm-start-btn').addEventListener('click', () => {
+            fetch('/api/v1/admin/start_match', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        // document.getElementById('match-start-overlay').style.display = 'none'; // Removed overlay
+                        bootstrap.Modal.getInstance(document.getElementById('start-match-modal')).hide();
+                        checkSystemState(); // 立即刷新状态
+                    } else {
+                        alert(data.message);
+                    }
+                });
+        });
+    });
+
+    let countdownInterval = null;
+
+    function checkSystemState() {
+        fetch('/api/v1/system/state?t=' + new Date().getTime())
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const state = data.data;
+                    const startBtn = document.getElementById('start-match-btn');
+                    const checkinBtn = document.getElementById('enable-checkin-btn');
+                    const countdownCard = document.getElementById('countdown-card');
+                    
+                    if (state.match_started) {
+                        // 比赛已开始：隐藏按钮，显示倒计时
+                        if (startBtn) startBtn.style.display = 'none';
+                        if (checkinBtn) checkinBtn.style.display = 'none';
+                        
+                        // 显示倒计时卡片
+                        if (state.remaining_seconds > 0) {
+                            countdownCard.classList.add('visible');
+                            startCountdown(state.remaining_seconds, state.timeout_processed);
+                        } else if (state.remaining_seconds === 0 && !state.timeout_processed) {
+                             // 倒计时结束但未处理超时
+                             countdownCard.classList.add('visible');
+                             updateCountdownDisplay(0);
+                             triggerTimeout();
+                        } else if (state.remaining_seconds < 0) {
+                             // 测试模式 / 无倒计时
+                             countdownCard.classList.remove('visible');
+                        } else {
+                            // 倒计时结束且已处理
+                            countdownCard.classList.remove('visible');
+                        }
+                    } else {
+                        // 比赛未开始
+                        if (startBtn) startBtn.style.display = 'inline-block';
+                        
+                        // 签到按钮状态
+                        if (checkinBtn) {
+                            if (state.checkin_enabled) {
+                                checkinBtn.textContent = '签到已开放';
+                                checkinBtn.classList.remove('btn-m3-outline-primary');
+                                checkinBtn.classList.add('btn-m3-primary');
+                                checkinBtn.disabled = true;
+                                checkinBtn.style.display = 'inline-block';
+                            } else {
+                                checkinBtn.textContent = '开放签到';
+                                checkinBtn.classList.add('btn-m3-outline-primary');
+                                checkinBtn.classList.remove('btn-m3-primary');
+                                checkinBtn.disabled = false;
+                                checkinBtn.style.display = 'inline-block';
+                            }
+                        }
+                        
+                        countdownCard.classList.remove('visible');
+                    }
+                }
+            });
+    }
+
+    function startCountdown(initialSeconds, timeoutProcessed) {
+        if (countdownInterval) clearInterval(countdownInterval);
+        
+        let seconds = initialSeconds;
+        updateCountdownDisplay(seconds);
+        
+        countdownInterval = setInterval(() => {
+            seconds--;
+            if (seconds < 0) {
+                seconds = 0;
+                clearInterval(countdownInterval);
+                if (!timeoutProcessed) {
+                    triggerTimeout();
+                }
+            }
+            updateCountdownDisplay(seconds);
+        }, 1000);
+    }
+
+    function updateCountdownDisplay(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        document.getElementById('countdown-timer').textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function triggerTimeout() {
+        fetch('/api/v1/admin/trigger_timeout', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    document.getElementById('countdown-card').classList.remove('visible');
+                }
+            });
+    }
+
+    function disableAdminControls() {
+        // 禁用除开始按钮外的所有交互
+        // const content = document.querySelector('.m3-shell');
+    }
+
+    function enableAdminControls() {
+        // const inputs = document.querySelectorAll('button, input, select, textarea, a');
+    }
+</script>
+{% endblock %}

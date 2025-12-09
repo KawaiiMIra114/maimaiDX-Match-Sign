@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>启动赛事系统</title>
+</head>
+<body style="text-align:center; padding-top: 50px;">
+
+    <h3>正在尝试启动 App...</h3>
+    <p>如果未自动跳转，请选择操作：</p>
+    
+    <a id="btn-open" href="#" style="
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 16px;
+        margin: 10px;">
+        🚀 打开 App
+    </a>
+
+    <a id="btn-download" href="#" style="
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: #28a745;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 16px;
+        margin: 10px;">
+        📥 下载 APK
+    </a>
+
+    <script>
+        // 1. 配置
+        var scheme = "gamesign";
+        var host = "open";
+        var packageName = "com.harbin.gamesign";
+        // 下载直链
+        var downloadUrl = "https://107.151.246.18:34959/down/HyRzIfoIGPgt.apk";
+
+        // 2. 生成 Intent 链接 (带 fallback)
+        var intentUrl = "intent://" + host + 
+                        "#Intent;" + 
+                        "scheme=" + scheme + ";" + 
+                        "package=" + packageName + ";" + 
+                        "S.browser_fallback_url=" + encodeURIComponent(downloadUrl) + ";" + 
+                        "end";
+
+        // 3. 绑定按钮
+        document.getElementById("btn-open").href = intentUrl;
+        document.getElementById("btn-download").href = downloadUrl;
+
+        // 4. 尝试自动跳转
+        window.location.href = intentUrl;
+    </script>
+</body>
+</html>

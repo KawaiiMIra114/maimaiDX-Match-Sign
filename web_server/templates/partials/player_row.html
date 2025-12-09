@@ -1,0 +1,158 @@
+<tr class="{% if p.promotion_status not in ['none', 'eliminated'] %}table-warning{% endif %}">
+    <td>
+        <input type="checkbox" name="selected_players" value="{{ p.id }}">
+    </td>
+    <td>{{ p.id }}</td>
+    <td>{{ p.name }}</td>
+    <td>{{ p.rating }}</td>
+    <td>
+        <select class="form-select form-select-sm" name="group_{{ p.id }}">
+            <option value="beginner" {% if p.group=='beginner' %}selected{% endif %}>萌新组</option>
+            <option value="advanced" {% if p.group=='advanced' %}selected{% endif %}>进阶组</option>
+            <option value="peak" {% if p.group=='peak' %}selected{% endif %}>巅峰组</option>
+        </select>
+    </td>
+    <td>
+        {% if p.checked_in %}
+        <span class="badge bg-success">已签到</span>
+        {% else %}
+        <span class="badge bg-secondary">未到</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if p.on_machine %}
+        <span class="badge bg-danger">💻 上机中</span>
+        {% else %}
+        <span class="badge bg-dark">闲置</span>
+        {% endif %}
+    </td>
+    <td style="max-width:80px;">
+        <input type="number" class="form-control form-control-sm"
+            name="match_number_{{ p.id }}"
+            value="{{ p.match_number if p.match_number is not none else '' }}">
+    </td>
+    <td style="max-width:90px;">
+        <input type="number" step="any" class="form-control form-control-sm"
+            name="score_round1_{{ p.id }}"
+            value="{{ p.score_round1 if p.score_round1 is not none else '' }}">
+    </td>
+    {% if p.group != 'peak' %}
+    <td style="max-width:90px;">
+        <input type="number" step="any" class="form-control form-control-sm"
+            name="score_revival_{{ p.id }}"
+            value="{{ p.score_revival if p.score_revival is not none else '' }}">
+    </td>
+    {% endif %}
+
+    {% if p.group == 'advanced' %}
+    <!-- 进阶组：16→8 / 8→4 -->
+    <td style="max-width:120px;">
+        {% if p.promotion_status in ['top16', 'top16_out', 'top8', 'top8_out'] %}
+        <select class="form-select form-select-sm" name="ko16_8_result_{{ p.id }}">
+            <option value="">无</option>
+            <option value="to8">晋级 8 强</option>
+            <option value="out16">淘汰</option>
+        </select>
+        {% else %}
+        <span class="text-muted small">-</span>
+        {% endif %}
+    </td>
+    <td style="max-width:120px;">
+        {% if p.promotion_status in ['top8', 'top8_out', 'top4', 'third', 'fourth', 'runner_up', 'champion'] %}
+        <select class="form-select form-select-sm" name="ko8_4_result_{{ p.id }}">
+            <option value="">无</option>
+            <option value="to4">晋级 4 强</option>
+            <option value="out8">淘汰</option>
+        </select>
+        {% else %}
+        <span class="text-muted small">-</span>
+        {% endif %}
+    </td>
+    {% elif p.group == 'beginner' %}
+    <!-- 萌新组：8→4 / 4→2 -->
+    <td style="max-width:120px;">
+        {% if p.promotion_status in ['top8', 'top8_out', 'top4'] %}
+        <select class="form-select form-select-sm" name="ko8_4_result_{{ p.id }}">
+            <option value="">无</option>
+            <option value="to4">晋级 4 强</option>
+            <option value="out8">淘汰</option>
+        </select>
+        {% else %}
+        <span class="text-muted small">-</span>
+        {% endif %}
+    </td>
+    <td style="max-width:120px;">
+        {% if p.promotion_status in ['top4'] %}
+        <select class="form-select form-select-sm" name="ko4_2_result_{{ p.id }}">
+            <option value="">无</option>
+            <option value="to_final">晋级 决赛</option>
+            <option value="out4">淘汰</option>
+        </select>
+        {% else %}
+        <span class="text-muted small">-</span>
+        {% endif %}
+    </td>
+    {% else %}
+    <!-- 巅峰组：仅 4→2 -->
+    <td style="max-width:120px;">
+        {% if p.promotion_status in ['top4_peak'] %}
+        <select class="form-select form-select-sm" name="ko4_2_result_{{ p.id }}">
+            <option value="">无</option>
+            <option value="to_final">晋级 决赛</option>
+            <option value="out4">淘汰</option>
+        </select>
+        {% else %}
+        <span class="text-muted small">-</span>
+        {% endif %}
+    </td>
+    {% endif %}
+    <td style="min-width:180px;">
+        <select class="form-select form-select-sm" name="status_{{ p.id }}">
+            <option value="none" {% if p.promotion_status=='none' %}selected{% endif %}>未晋级 / 未设置</option>
+            
+            {% if p.group == 'beginner' %}
+                <!-- 萌新组 -->
+                <option value="revival" {% if p.promotion_status=='revival' %}selected{% endif %}>复活赛</option>
+                <option value="top8" {% if p.promotion_status=='top8' %}selected{% endif %}>本组 8 强（进行中）</option>
+                <option value="top8_out" {% if p.promotion_status=='top8_out' %}selected{% endif %}>8 强落败</option>
+                <option value="top4" {% if p.promotion_status=='top4' %}selected{% endif %}>本组 4 强（进行中）</option>
+                <option value="final" {% if p.promotion_status=='final' %}selected{% endif %}>本组决赛（进行中）</option>
+                <option value="third" {% if p.promotion_status=='third' %}selected{% endif %}>季军</option>
+                <option value="fourth" {% if p.promotion_status=='fourth' %}selected{% endif %}>殿军</option>
+                <option value="runner_up" {% if p.promotion_status=='runner_up' %}selected{% endif %}>亚军</option>
+                <option value="champion" {% if p.promotion_status=='champion' %}selected{% endif %}>冠军</option>
+
+            {% elif p.group == 'peak' %}
+                <!-- 巅峰组 -->
+                <option value="top4_peak" {% if p.promotion_status=='top4_peak' %}selected{% endif %}>本组 4 强（进行中）</option>
+                <option value="final" {% if p.promotion_status=='final' %}selected{% endif %}>本组决赛（进行中）</option>
+                <option value="third" {% if p.promotion_status=='third' %}selected{% endif %}>季军</option>
+                <option value="runner_up" {% if p.promotion_status=='runner_up' %}selected{% endif %}>亚军</option>
+                <option value="champion" {% if p.promotion_status=='champion' %}selected{% endif %}>冠军</option>
+
+            {% else %}
+                <!-- 进阶组 (默认) -->
+                <option value="revival" {% if p.promotion_status=='revival' %}selected{% endif %}>复活赛</option>
+                <option value="top16" {% if p.promotion_status=='top16' %}selected{% endif %}>本组 16 强（进行中）</option>
+                <option value="top16_out" {% if p.promotion_status=='top16_out' %}selected{% endif %}>16 强落败</option>
+                <option value="top8" {% if p.promotion_status=='top8' %}selected{% endif %}>本组 8 强（进行中）</option>
+                <option value="top8_out" {% if p.promotion_status=='top8_out' %}selected{% endif %}>8 强落败</option>
+                <option value="top4" {% if p.promotion_status=='top4' %}selected{% endif %}>本组 4 强（进行中）</option>
+                <option value="final" {% if p.promotion_status=='final' %}selected{% endif %}>本组决赛（进行中）</option>
+                <option value="third" {% if p.promotion_status=='third' %}selected{% endif %}>季军</option>
+                <option value="fourth" {% if p.promotion_status=='fourth' %}selected{% endif %}>殿军</option>
+                <option value="runner_up" {% if p.promotion_status=='runner_up' %}selected{% endif %}>亚军</option>
+                <option value="champion" {% if p.promotion_status=='champion' %}selected{% endif %}>冠军</option>
+            {% endif %}
+
+            <option value="eliminated" {% if p.promotion_status=='eliminated' %}selected{% endif %}>淘汰</option>
+        </select>
+    </td>
+    <td>
+        <button type="button" class="btn btn-outline-danger btn-sm p-1"
+            style="line-height:1;" title="删除选手"
+            onclick="deletePlayer('{{ p.id }}', '{{ p.name }}')">
+            ×
+        </button>
+    </td>
+</tr>

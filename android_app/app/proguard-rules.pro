@@ -1,0 +1,2 @@
+-keep class com.harbin.gamesign.data.model.** { *; }
+-keepclassmembers class com.harbin.gamesign.data.model.** { *; }
