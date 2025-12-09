@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}术力口大赛签到{% endblock %}
+{% block title %}比赛签到{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}?v=final_fix">
@@ -43,16 +43,16 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div class="d-flex flex-column">
                 <div class="m3-app-bar-event">
-                    🏆 术力口大赛签到
+                    🏆 比赛签到
                 </div>
                 <span class="m3-app-bar-title-sub">
-                    Harbin Red Chart Tournament · Player Portal
+                    Maimai DX Tournament · Player Portal
                 </span>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <span class="chip-current-event d-none d-md-inline-flex">
                     <span>当前赛事：</span>
-                    <strong>术力口大赛</strong>
+                    <strong>maimai DX 比赛</strong>
                 </span>
                 {% if player %}
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm bg-white bg-opacity-20">

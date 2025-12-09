@@ -1602,9 +1602,9 @@ def api_admin_login():
     data = request.get_json()
     password = data.get('password', '')
     
-    # 支持网页后台密码 admin888 或 API 专用密码 harbin2024
-    if password in ['admin888', 'harbin2024']:
-        return api_response(True, data={'token': 'harbin_red_chart_2024'}, message='登录成功')
+    # 支持网页后台密码 admin888 或 API 专用密码 api_password_2024
+    if password in ['admin888', 'api_password_2024']:
+        return api_response(True, data={'token': 'admin_token_2024'}, message='登录成功')
     
     return api_response(False, message='密码错误', code=401)
 

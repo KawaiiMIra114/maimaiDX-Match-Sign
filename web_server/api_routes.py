@@ -28,10 +28,9 @@ def require_api_admin(f):
         # 支持 Session 或 Header Token 认证
         if session.get('is_admin'):
             return f(*args, **kwargs)
-        
         token = request.headers.get('X-Admin-Token')
         # 建议使用环境变量配置 Token
-        expected_token = os.environ.get('ADMIN_API_TOKEN', 'change_this_token_in_production')
+        expected_token = os.environ.get('ADMIN_API_TOKEN', 'admin_token_2024')
         
         if token == expected_token:
             return f(*args, **kwargs)
