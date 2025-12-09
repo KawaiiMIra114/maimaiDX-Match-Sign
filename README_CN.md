@@ -36,12 +36,67 @@
 *   **前端**: HTML5, CSS3 (Material 3), JavaScript
 *   **移动端**: Android (Kotlin, Jetpack Compose)
 
-## 🚀 快速开始
+## � 使用指南
 
-本项目分为两个主要部分，请分别参考对应的文档进行配置：
+### 一、Web 服务端部署
 
-*   **服务端部署**: [Web Server README](web_server/README.md)
-*   **安卓客户端**: [Android App README](android_app/README.md)
+服务端是整个系统的核心，需要优先部署。
+
+#### 1. 环境准备
+确保你的电脑或服务器已安装：
+*   [Python 3.8 或更高版本](https://www.python.org/downloads/)
+*   `pip` (Python 包管理器)
+
+#### 2. 安装依赖
+打开终端（命令行），进入 `web_server` 目录并安装所需库：
+```bash
+cd web_server
+pip install -r requirements.txt
+```
+
+#### 3. 启动服务
+在 `web_server` 目录下运行：
+```bash
+python app.py
+```
+*   首次运行会自动创建数据库文件 `data.db`。
+*   默认服务地址：`http://localhost:5000` (本机访问) 或 `http://你的IP地址:5000` (局域网访问)。
+
+#### 4. 访问后台
+打开浏览器访问 `http://localhost:5000/admin`。
+*   **默认管理员账号**：`admin`
+*   **默认管理员密码**：`admin888`
+*   **敏感操作保护密码**（如清空数据）：`1145141919810ax`
+
+> 💡 **提示**：建议在 `app.py` 文件中搜索并修改这些默认密码，以确保安全。
+
+---
+
+### 二、Android 客户端配置与编译
+
+如果你需要使用 Android App，需要自行编译 APK。
+
+#### 1. 环境准备
+*   [Android Studio](https://developer.android.com/studio) (推荐最新版)
+*   JDK 17 (通常 Android Studio 自带)
+
+#### 2. 修改服务器地址 (关键！)
+App 需要知道连接到哪台服务器。
+1.  打开文件：`android_app/app/src/main/java/com/harbin/gamesign/data/api/ApiClient.kt`
+2.  找到 `BASE_URL` 变量：
+    ```kotlin
+    // 请将此处修改为你部署 Web Server 的电脑 IP 地址
+    // 例如：http://192.168.1.100:5000/
+    const val BASE_URL = "http://YOUR_SERVER_IP:5000/"
+    ```
+    *   ⚠️ 注意：**不要**使用 `localhost`，因为在手机上 `localhost` 指的是手机自己。
+    *   确保手机和电脑在**同一局域网**（连接同一个 WiFi）。
+
+#### 3. 编译 APK
+1.  用 Android Studio 打开 `android_app` 目录。
+2.  等待 Gradle 同步完成。
+3.  点击菜单栏 **Build** -> **Build Bundle(s) / APK(s)** -> **Build APK(s)**。
+4.  编译完成后，将生成的 APK 发送到手机安装即可。
 
 ## 📄 开源协议
 
