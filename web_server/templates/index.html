@@ -978,14 +978,14 @@
             });
         }
 
-        // 巅峰组 Modal
+        // 自选曲 Modal
         const peakModal = new bootstrap.Modal(document.getElementById('peakSongModal'));
         document.getElementById('btn-submit-peak-confirm').addEventListener('click', function () {
             const name = document.getElementById('peak-song-name').value;
             const diff = document.getElementById('peak-song-diff').value;
             if (!name || !diff) return;
 
-            fetch(`/api/v1/player/${playerId}/peak/submit_song`, {
+            fetch(`/api/v1/player/${playerId}/match/submit_song`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ song_name: name, difficulty: parseInt(diff) })
@@ -1038,8 +1038,8 @@
                             opForfeitEl.classList.add('d-none');
                         }
 
-                        // 巅峰组逻辑
-                        if (m.group === 'peak') {
+                        // 自选曲逻辑 (通用)
+                        if (m.is_selection_phase) {
                             peakPanel.classList.remove('d-none');
 
                             // 我方
@@ -1065,16 +1065,21 @@
                                     opSongText.textContent = `${m.op_selection.song_name} (Lv.${m.op_selection.difficulty})`;
                                     opSongText.classList.remove('text-muted');
 
-                                    // Ban 逻辑
-                                    if (m.has_banned_this_match) {
-                                        btnBanPeak.classList.add('d-none');
-                                        badgeBanned.classList.remove('d-none');
-                                    } else if (!m.ban_used) {
-                                        // 没用过 Ban，且对方选了歌 -> 显示 Ban 按钮
-                                        btnBanPeak.classList.remove('d-none');
-                                        badgeBanned.classList.add('d-none');
+                                    // Ban 逻辑 (仅巅峰组)
+                                    if (m.group === 'peak') {
+                                        if (m.has_banned_this_match) {
+                                            btnBanPeak.classList.add('d-none');
+                                            badgeBanned.classList.remove('d-none');
+                                        } else if (!m.ban_used) {
+                                            // 没用过 Ban，且对方选了歌 -> 显示 Ban 按钮
+                                            btnBanPeak.classList.remove('d-none');
+                                            badgeBanned.classList.add('d-none');
+                                        } else {
+                                            // 用过 Ban (非本场) -> 也不显示
+                                            btnBanPeak.classList.add('d-none');
+                                            badgeBanned.classList.add('d-none');
+                                        }
                                     } else {
-                                        // 用过 Ban (非本场) -> 也不显示
                                         btnBanPeak.classList.add('d-none');
                                         badgeBanned.classList.add('d-none');
                                     }

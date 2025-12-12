@@ -36,6 +36,38 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DB_PATH
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'your_super_secret_key_here_change_me'
 
+# ================= 赛制配置 =================
+# 您可以在此处修改赛制规则
+# "qualifier_promotion": 海选晋级规则列表。系统会按照海选成绩排名，依次将选手分配到对应状态。
+# "self_selection_phases": 允许提交自选曲的阶段。
+TOURNAMENT_CONFIG = {
+    'groups': {
+        'beginner': {
+            'label': '萌新组',
+            'qualifier_promotion': [
+                {'status': 'top16', 'count': 15}, # 前 15 名 -> 16强 (加上复活赛1人凑齐16)
+                {'status': 'revival', 'count': 4}  # 接下来 4 名 -> 复活赛
+            ],
+            'self_selection_phases': ['top16', 'top8', 'top4', 'final']
+        },
+        'advanced': {
+            'label': '进阶组',
+            'qualifier_promotion': [
+                {'status': 'top16', 'count': 15},
+                {'status': 'revival', 'count': 4}
+            ],
+            'self_selection_phases': ['top16', 'top8', 'top4', 'final']
+        },
+        'peak': {
+            'label': '巅峰组',
+            'qualifier_promotion': [
+                {'status': 'top4_peak', 'count': 4}
+            ],
+            'self_selection_phases': ['top4', 'top4_peak', 'final']
+        }
+    }
+}
+
 db = SQLAlchemy(app)
 
 # ================= 数据模型 =================
@@ -2191,37 +2223,41 @@ def handle_player_forfeit(player):
 
 def promote_qualifier_logic():
     """
-    海选晋级逻辑 (New Logic)
+    海选晋级逻辑 (Configurable)
     """
-    count = 0 
-    # 1. Beginner: Top 7 -> Top 8, Next 4 -> Revival
-    begs = Player.query.filter(Player.group == 'beginner', Player.score_round1 != None, Player.forfeited == False)\
-        .order_by(Player.score_round1.desc().nullslast(), Player.id.asc()).all()
-    for i, p in enumerate(begs):
-        if i < 7: p.promotion_status = 'top8'
-        elif i < 11: p.promotion_status = 'revival'
-        else: p.promotion_status = 'eliminated'
-        count += 1
+    total_count = 0 
+    
+    for group_key, config in TOURNAMENT_CONFIG['groups'].items():
+        if 'qualifier_promotion' not in config:
+            continue
+            
+        # 获取该组别海选有成绩的选手
+        players = Player.query.filter(
+            Player.group == group_key, 
+            Player.score_round1 != None, 
+            Player.forfeited == False
+        ).order_by(Player.score_round1.desc().nullslast(), Player.id.asc()).all()
         
-    # 2. Peak: Top 4 -> Top 4 Peak
-    peaks = Player.query.filter(Player.group == 'peak', Player.score_round1 != None, Player.forfeited == False)\
-        .order_by(Player.score_round1.desc().nullslast(), Player.id.asc()).all()
-    for i, p in enumerate(peaks):
-        if i < 4: p.promotion_status = 'top4_peak'
-        else: p.promotion_status = 'eliminated'
-        count += 1
+        current_idx = 0
+        for rule in config['qualifier_promotion']:
+            target_status = rule['status']
+            count = rule['count']
+            
+            # 晋级一批
+            for _ in range(count):
+                if current_idx < len(players):
+                    players[current_idx].promotion_status = target_status
+                    current_idx += 1
+                    total_count += 1
         
-    # 3. Advanced: Top 15 -> Top 16, Next 4 -> Revival
-    advs = Player.query.filter(Player.group == 'advanced', Player.score_round1 != None, Player.forfeited == False)\
-        .order_by(Player.score_round1.desc().nullslast(), Player.id.asc()).all()
-    for i, p in enumerate(advs):
-        if i < 15: p.promotion_status = 'top16'
-        elif i < 19: p.promotion_status = 'revival'
-        else: p.promotion_status = 'eliminated'
-        count += 1
+        # 剩下的淘汰
+        while current_idx < len(players):
+            players[current_idx].promotion_status = 'eliminated'
+            current_idx += 1
+            total_count += 1
         
     db.session.commit()
-    return count
+    return total_count
 
 def auto_create_matches(phase, group):
     """
@@ -2313,9 +2349,16 @@ def api_player_match_info(player_id):
 
     # Reveal Logic: Only show opponent selection if ALL players in this phase/group have submitted
     reveal_op = False
-    if m.group == 'peak' and opsel:
+    
+    # 判断是否为自选曲阶段
+    is_selection_phase = False
+    group_config = TOURNAMENT_CONFIG['groups'].get(m.group)
+    if group_config and m.phase in group_config.get('self_selection_phases', []):
+        is_selection_phase = True
+
+    if is_selection_phase and opsel:
         # 1. Get all matches in this phase/group
-        phase_matches = Match.query.filter_by(phase=m.phase, group='peak').all()
+        phase_matches = Match.query.filter_by(phase=m.phase, group=m.group).all()
         # 2. Get all player IDs involved
         p_ids = set()
         for pm in phase_matches:
@@ -2349,15 +2392,26 @@ def api_player_match_info(player_id):
         "op_selection": op_data,
         "ban_used": p.ban_used,
         "has_banned_this_match": (ban_rec is not None),
-        "was_banned": was_banned
+        "was_banned": was_banned,
+        "is_selection_phase": is_selection_phase
     })
 
-@app.route('/api/v1/player/<int:player_id>/peak/submit_song', methods=['POST'])
-def api_peak_submit(player_id):
-    # Only for Peak 4->2 or Final
+@app.route('/api/v1/player/<int:player_id>/match/submit_song', methods=['POST'])
+def api_match_submit_song(player_id):
+    # 通用自选曲提交接口 (Configurable)
+    
     p = Player.query.get(player_id)
     m = get_active_match(player_id)
-    if not m: return api_response(False, message="No match", code=400)
+    if not m: return api_response(False, message="当前无进行中比赛", code=400)
+    
+    # 验证是否允许自选曲
+    allowed = False
+    group_config = TOURNAMENT_CONFIG['groups'].get(m.group)
+    if group_config and m.phase in group_config.get('self_selection_phases', []):
+        allowed = True
+        
+    if not allowed:
+        return api_response(False, message="当前阶段不支持自选曲", code=400)
     
     data = request.get_json()
     name = data.get('song_name')
@@ -2366,7 +2420,6 @@ def api_peak_submit(player_id):
     if not name or diff is None:
         return api_response(False, message="参数不完整", code=400)
 
-    # 强制转换 difficulty 为整数，处理前端可能传字符串的情况
     try:
         diff = int(diff)
     except (ValueError, TypeError):
@@ -2374,11 +2427,11 @@ def api_peak_submit(player_id):
     
     # check existing
     exist = SongSelection.query.filter_by(match_id=m.id, player_id=p.id, is_banned=False).first()
-    if exist: return api_response(False, message="Already submitted", code=400)
+    if exist: return api_response(False, message="您已提交过自选曲", code=400)
     
     db.session.add(SongSelection(match_id=m.id, player_id=p.id, song_name=name, difficulty=diff))
     db.session.commit()
-    return api_response(True, message="Submitted")
+    return api_response(True, message="提交成功")
 
 @app.route('/api/v1/player/<int:player_id>/peak/ban_song', methods=['POST'])
 def api_peak_ban(player_id):

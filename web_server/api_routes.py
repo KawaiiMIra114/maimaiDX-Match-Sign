@@ -102,7 +102,9 @@ def api_get_player(player_id):
         'rating': player.rating,
         'score_round1': player.score_round1,
         'score_round2': player.score_round2,
-        'score_revival': player.score_revival
+        'score_revival': player.score_revival,
+        'a_ban_available': player.a_ban_available,
+        'b_ban_available': player.b_ban_available
     })
 
 
