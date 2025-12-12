@@ -6,7 +6,7 @@
 
 This is an open-source sign-in and tournament management system designed specifically for maimai DX tournaments, including a Web management dashboard and an Android client. It aims to provide an efficient and modern tournament organization experience.
 
-Project Community Group: `https://qm.qq.com/q/QgljYbEA46`
+Project Community Group:[571239223](https://qm.qq.com/q/YEgUKiWNEW)
 
 ## 📥 Installation
 
