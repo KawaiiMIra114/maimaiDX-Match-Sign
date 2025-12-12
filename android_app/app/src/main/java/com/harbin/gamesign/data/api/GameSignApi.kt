@@ -19,6 +19,8 @@ interface GameSignApi {
     suspend fun register(
         @Part("name") name: RequestBody,
         @Part("password") password: RequestBody,
+        @Part("lat") lat: RequestBody?,
+        @Part("lon") lon: RequestBody?,
         @Part avatar: MultipartBody.Part?
     ): ApiResponse<LoginResponse>
 

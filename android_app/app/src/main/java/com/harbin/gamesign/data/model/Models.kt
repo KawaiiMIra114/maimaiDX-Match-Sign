@@ -122,7 +122,7 @@ data class SongSelection(
 )
 
 // 请求体
-data class CheckinRequest(val name: String)
+data class CheckinRequest(val name: String, val lat: Double?, val lon: Double?)
 data class SubmitScoreRequest(val score: Double, val phase: String)
 data class SubmitPeakSongRequest(val song_name: String, val difficulty: Int)
 
@@ -167,7 +167,7 @@ data class CheckStatusResponse(
     @SerializedName("avatar_url") val avatarUrl: String?
 )
 
-data class LoginRequest(val name: String, val password: String)
+data class LoginRequest(val name: String, val password: String, val lat: Double?, val lon: Double?)
 data class LoginResponse(val success: Boolean, val msg: String)
 
 // 曲目相关
