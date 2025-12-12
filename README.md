@@ -4,7 +4,7 @@
 
 > **声明**：本项目部分环节使用 **Gemini 3.0 Pro** 与 **GPT-5.1 Thinking** 协作完成。
 
-这是一个专为 maimai DX 比赛设计的开源签到与赛事管理系统，包含 Web 管理端与 Android 客户端。旨在提供高效、现代化的赛事组织体验。
+这是一个为 maimai DX、Chunithm 等街机音游 比赛设计的开源签到与赛事管理系统，包含 Web 管理端与 Android 客户端。旨在提供高效、现代化的赛事组织体验。
 
 项目交流群：[571239223](https://qm.qq.com/q/YEgUKiWNEW)
 
