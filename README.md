@@ -6,6 +6,8 @@
 
 这是一个专为 maimai DX 比赛设计的开源签到与赛事管理系统，包含 Web 管理端与 Android 客户端。旨在提供高效、现代化的赛事组织体验。
 
+项目交流群：`https://qm.qq.com/q/QgljYbEA46`
+
 ## 📥 获取项目 (Installation)
 
 首先，你需要将本项目克隆到本地：
@@ -47,13 +49,13 @@ cd maimaiDX-Match-Sign
 
 ## 📖 使用指南
 
-**在一切开始前，请确保你有一台运行 Linux 系统的服务器。推荐使用 [宝塔面板](https://www.bt.cn/) 进行操作，以便更轻松地管理环境和部署。**
+**在一切开始前，请确保你有一台运行 Linux 系统的服务器。推荐使用 `https://www.bt.cn/` 进行操作，以便更轻松地管理环境和部署。**
 
 ### 一、Web 服务端部署
 
 #### 1. 环境准备
 确保你的服务器已安装：
-*   [Python 3.8 或更高版本](https://www.python.org/downloads/)
+*   `https://www.python.org/downloads/`
 *   `pip` (Python 包管理器)
 
 #### 2. 安装依赖
@@ -111,7 +113,7 @@ python app.py
 如果你需要使用 Android App，需要自行编译 APK。
 
 #### 1. 环境准备
-*   [Android Studio](https://developer.android.com/studio) (推荐最新版)
+*   `https://developer.android.com/studio` (推荐最新版)
 *   JDK 17 (通常 Android Studio 自带)
 
 #### 2. 修改服务器地址 (关键！)
@@ -120,7 +122,7 @@ App 需要知道连接到哪台服务器。
 2.  找到 `BASE_URL` 变量：
     ```kotlin
     // 请将此处修改为你部署 Web Server 的电脑 IP 地址
-    // 例如：http://192.168.1.100:5000/
+    // 例如： `http://192.168.1.100:5000/`
     const val BASE_URL = "http://YOUR_SERVER_IP:5000/"
     ```
     *   ⚠️ 注意：**不要**使用 `localhost`，因为在手机上 `localhost` 指的是手机自己。
